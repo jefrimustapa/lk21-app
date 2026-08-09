@@ -340,80 +340,80 @@ def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21
     page_num = 1
     total_pages_detected = None
 
-    while current_url:
-        if total_pages_detected and page_num > total_pages_detected:
-            break
-        if max_pages > 0 and page_num > max_pages:
-            break
+    # Step 1: Fetch Page 1 to detect total pages and extract initial items
+    html_text = fetch_html_page(start_url, headers)
+    if not html_text:
+        err_msg = f"Failed to fetch HTML content from {start_url}"
+        print(err_msg, flush=True)
+        if progress_callback:
+            progress_callback(phase="error", current=0, total=0, percentage=0.0, message=err_msg)
+        return []
 
-        try:
-            html_text = fetch_html_page(current_url, headers)
-            if not html_text:
-                err_msg = f"Failed to fetch HTML content from {current_url}"
-                print(err_msg, flush=True)
-                if progress_callback:
-                    progress_callback(phase="error", current=0, total=0, percentage=0.0, message=err_msg)
-                break
+    soup = BeautifulSoup(html_text, 'html.parser')
+    page_info_h3 = soup.find('h3', text=re.compile(r'dari\s+\d+\s+total\s+halaman', re.I))
+    if not page_info_h3:
+        match = re.search(r'dari\s+(\d+)\s+total\s+halaman', html_text, re.I)
+        if match:
+            total_pages_detected = int(match.group(1))
+        else:
+            total_pages_detected = 50
+    else:
+        match = re.search(r'dari\s+(\d+)\s+total\s+halaman', page_info_h3.text, re.I)
+        if match:
+            total_pages_detected = int(match.group(1))
+        else:
+            total_pages_detected = 50
 
-            soup = BeautifulSoup(html_text, 'html.parser')
+    target_total = total_pages_detected if max_pages <= 0 else min(max_pages, total_pages_detected)
+    print(f"Scraping {target_total} pages in parallel with 10 worker threads...", flush=True)
 
-            # Auto-detect total pages if max_pages <= 0
-            if max_pages <= 0 and not total_pages_detected:
-                # Search for <h3>Halaman 1 dari 1185 total halaman</h3>
-                page_info_h3 = soup.find('h3', text=re.compile(r'dari\s+\d+\s+total\s+halaman', re.I))
-                if not page_info_h3:
-                    # Fallback search anywhere in text
-                    match = re.search(r'dari\s+(\d+)\s+total\s+halaman', html_text, re.I)
-                    if match:
-                        total_pages_detected = int(match.group(1))
-                else:
-                    match = re.search(r'dari\s+(\d+)\s+total\s+halaman', page_info_h3.text, re.I)
-                    if match:
-                        total_pages_detected = int(match.group(1))
+    base_clean = start_url.rstrip('/')
+    page_urls = [start_url]
+    for p in range(2, target_total + 1):
+        if '/page/' in base_clean:
+            page_urls.append(re.sub(r'/page/\d+/?', f'/page/{p}/', base_clean))
+        else:
+            page_urls.append(f"{base_clean}/page/{p}/")
 
-                if total_pages_detected:
-                    print(f"Auto-detected max pages from website: {total_pages_detected} total pages.", flush=True)
-                else:
-                    total_pages_detected = 50 # Fallback if element not found
+    def fetch_and_parse_page(url_info):
+        idx, page_url = url_info
+        page_pct = ((idx + 1) / target_total) * 100
+        msg = f"[Pages {idx + 1}/{target_total} - {page_pct:.1f}%] Fetching: {page_url}"
+        print(msg, flush=True)
+        if progress_callback:
+            progress_callback(phase="pages", current=idx + 1, total=target_total, percentage=round(page_pct, 1), message=msg)
 
-            target_total = total_pages_detected if (max_pages <= 0 and total_pages_detected) else max_pages
-            page_pct = (page_num / target_total) * 100
-            msg = f"[Pages {page_num}/{target_total} - {page_pct:.1f}%] Fetching: {current_url}"
-            print(msg, flush=True)
-            if progress_callback:
-                progress_callback(phase="pages", current=page_num, total=target_total, percentage=round(page_pct, 1), message=msg)
+        p_html = fetch_html_page(page_url, headers)
+        if not p_html:
+            return []
+        
+        p_soup = BeautifulSoup(p_html, 'html.parser')
+        p_items = []
+        cards = p_soup.find_all('article')
+        if cards:
+            for card in cards:
+                a_tag = card.find('a', href=True)
+                if a_tag:
+                    item = classify_card(a_tag, card_element=card, card_text=card.get_text(), base_url=start_url)
+                    if item:
+                        p_items.append(item)
+        else:
+            for a_tag in p_soup.find_all('a', href=True):
+                item = classify_card(a_tag, card_element=a_tag.parent, card_text=a_tag.get_text(), base_url=start_url)
+                if item:
+                    p_items.append(item)
+        return p_items
 
-            # Process grid cards (iterate over <article> card elements or fallback to scanning <a> tags directly)
-            cards = soup.find_all('article')
-            if cards:
-                for card in cards:
-                    a_tag = card.find('a', href=True)
-                    if a_tag:
-                        item = classify_card(a_tag, card_element=card, card_text=card.get_text(), base_url=start_url)
-                        if item and item['url'] not in extracted_links:
-                            extracted_links[item['url']] = item
-            else:
-                for a_tag in soup.find_all('a', href=True):
-                    item = classify_card(a_tag, card_element=a_tag.parent, card_text=a_tag.get_text(), base_url=start_url)
-                    if item and item['url'] not in extracted_links:
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(fetch_and_parse_page, (i, url)) for i, url in enumerate(page_urls)]
+        for future in as_completed(futures):
+            try:
+                page_items = future.result()
+                for item in page_items:
+                    if item['url'] not in extracted_links:
                         extracted_links[item['url']] = item
-
-            # Handle pagination URL building
-            base_clean = current_url.rstrip('/')
-            if '/page/' in base_clean:
-                current_url = re.sub(r'/page/\d+/?', f'/page/{page_num + 1}/', base_clean)
-            else:
-                current_url = f"{base_clean}/page/{page_num + 1}/"
-
-            page_num += 1
-            time.sleep(1)
-
-        except Exception as e:
-            err_msg = f"Error scraping {current_url}: {e}"
-            print(err_msg, flush=True)
-            if progress_callback:
-                progress_callback(phase="error", current=0, total=0, percentage=0.0, message=err_msg)
-            break
+            except Exception as page_err:
+                print(f"Error fetching page: {page_err}", flush=True)
 
     results = list(extracted_links.values())
 
