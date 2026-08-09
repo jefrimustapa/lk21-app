@@ -38,7 +38,7 @@ jobs:
 
       - name: 5. Run Scraper (Auto-Detect All Pages)
         run: |
-          python scripts/extract_lk21_links_mv.py --max-pages 0
+          python scripts/extract_lk21_links_mv.py --max-pages 10
 
       - name: 6. Convert SQLite DB to D1 Clean SQL Dump
         run: |
