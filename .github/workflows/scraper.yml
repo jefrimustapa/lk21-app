@@ -25,11 +25,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 4. Run Scraper (Auto-Detect All Pages)
+      - name: 4. Install & Connect Cloudflare WARP (Bypass Datacenter IP Block)
+        run: |
+          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+          sudo apt-get update && sudo apt-get install -y cloudflare-warp
+          warp-cli --accept-tos registration new || true
+          warp-cli --accept-tos mode warp+doh || true
+          warp-cli --accept-tos connect || true
+          sleep 3
+
+      - name: 5. Run Scraper (Auto-Detect All Pages)
         run: |
           python scripts/extract_lk21_links_mv.py --max-pages 0
 
-      - name: 5. Create GitHub Release & Upload lk21_mv_live.db
+      - name: 6. Create GitHub Release & Upload lk21_mv_live.db
         uses: softprops/action-gh-release@v1
         with:
           tag_name: latest-db

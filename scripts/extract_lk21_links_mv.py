@@ -314,13 +314,19 @@ def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21
             break
 
         try:
-            req_kwargs = {"headers": headers, "timeout": 20}
+            req_kwargs = {"headers": headers, "timeout": 25}
             if USE_CURL_CFFI:
-                req_kwargs["impersonate"] = "chrome120"
+                req_kwargs["impersonate"] = "chrome110"
 
             resp = requests.get(current_url, **req_kwargs)
             if resp.status_code != 200:
-                err_msg = f"HTTP {resp.status_code} from {current_url}: {resp.text[:100]}"
+                print(f"[CURL_CFFI={USE_CURL_CFFI}] Retrying with edge impersonation for {current_url}...", flush=True)
+                if USE_CURL_CFFI:
+                    req_kwargs["impersonate"] = "edge101"
+                    resp = requests.get(current_url, **req_kwargs)
+
+            if resp.status_code != 200:
+                err_msg = f"HTTP {resp.status_code} from {current_url} (CURL_CFFI={USE_CURL_CFFI}): {resp.text[:100]}"
                 print(err_msg, flush=True)
                 if progress_callback:
                     progress_callback(phase="error", current=0, total=0, percentage=0.0, message=err_msg)
