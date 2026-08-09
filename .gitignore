@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+*.tmp
+lk21_movies.db*
+lk21_mv.db*
+test_*.db
