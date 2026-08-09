@@ -8,6 +8,12 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urljoin, urlparse
 try:
+    from playwright.sync_api import sync_playwright
+    USE_PLAYWRIGHT = True
+except ImportError:
+    USE_PLAYWRIGHT = False
+
+try:
     from curl_cffi import requests
     USE_CURL_CFFI = True
 except ImportError:
@@ -278,6 +284,33 @@ def resolve_stream_urls(item, headers):
 
     return item
 
+def fetch_html_page(url, headers):
+    if USE_PLAYWRIGHT:
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                context = browser.new_context(user_agent=headers.get("User-Agent"))
+                page = context.new_page()
+                page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                page.wait_for_timeout(2000)
+                html_content = page.content()
+                browser.close()
+                if html_content and "Just a moment..." not in html_content:
+                    return html_content
+        except Exception as pw_err:
+            print(f"[Playwright] Error fetching {url}: {pw_err}", flush=True)
+
+    try:
+        req_kwargs = {"headers": headers, "timeout": 25}
+        if USE_CURL_CFFI:
+            req_kwargs["impersonate"] = "chrome110"
+        resp = requests.get(url, **req_kwargs)
+        if resp.status_code == 200:
+            return resp.text
+    except Exception:
+        pass
+    return None
+
 def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21_mv_live.db", progress_callback=None):
     extracted_links = {}
     headers = {
@@ -313,26 +346,15 @@ def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21
         if max_pages > 0 and page_num > max_pages:
             break
 
-        try:
-            req_kwargs = {"headers": headers, "timeout": 25}
-            if USE_CURL_CFFI:
-                req_kwargs["impersonate"] = "chrome110"
+        html_text = fetch_html_page(current_url, headers)
+        if not html_text:
+            err_msg = f"Failed to fetch HTML content from {current_url}"
+            print(err_msg, flush=True)
+            if progress_callback:
+                progress_callback(phase="error", current=0, total=0, percentage=0.0, message=err_msg)
+            break
 
-            resp = requests.get(current_url, **req_kwargs)
-            if resp.status_code != 200:
-                print(f"[CURL_CFFI={USE_CURL_CFFI}] Retrying with edge impersonation for {current_url}...", flush=True)
-                if USE_CURL_CFFI:
-                    req_kwargs["impersonate"] = "edge101"
-                    resp = requests.get(current_url, **req_kwargs)
-
-            if resp.status_code != 200:
-                err_msg = f"HTTP {resp.status_code} from {current_url} (CURL_CFFI={USE_CURL_CFFI}): {resp.text[:100]}"
-                print(err_msg, flush=True)
-                if progress_callback:
-                    progress_callback(phase="error", current=0, total=0, percentage=0.0, message=err_msg)
-                break
-
-            soup = BeautifulSoup(resp.text, 'html.parser')
+        soup = BeautifulSoup(html_text, 'html.parser')
 
             # Auto-detect total pages if max_pages <= 0
             if max_pages <= 0 and not total_pages_detected:
@@ -340,7 +362,7 @@ def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21
                 page_info_h3 = soup.find('h3', text=re.compile(r'dari\s+\d+\s+total\s+halaman', re.I))
                 if not page_info_h3:
                     # Fallback search anywhere in text
-                    match = re.search(r'dari\s+(\d+)\s+total\s+halaman', resp.text, re.I)
+                    match = re.search(r'dari\s+(\d+)\s+total\s+halaman', html_text, re.I)
                     if match:
                         total_pages_detected = int(match.group(1))
                 else:

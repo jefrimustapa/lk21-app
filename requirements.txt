@@ -1,5 +1,6 @@
 requests==2.31.0
 curl-cffi==0.7.1
+playwright==1.41.2
 beautifulsoup4==4.12.3
 flask==3.0.2
 gunicorn==21.2.0
