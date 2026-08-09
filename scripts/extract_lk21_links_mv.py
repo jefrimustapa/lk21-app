@@ -7,7 +7,12 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urljoin, urlparse
-import requests
+try:
+    from curl_cffi import requests
+    USE_CURL_CFFI = True
+except ImportError:
+    import requests
+    USE_CURL_CFFI = False
 from bs4 import BeautifulSoup
 
 EXCLUDED_PATHS = {
@@ -168,8 +173,12 @@ def fetch_playcdn_stream(iframe_url, headers):
 
 def resolve_stream_urls(item, headers):
     target_url = item['url']
+    req_kwargs = {"headers": headers, "timeout": 15}
+    if USE_CURL_CFFI:
+        req_kwargs["impersonate"] = "chrome120"
+
     try:
-        resp = requests.get(target_url, headers=headers, timeout=15)
+        resp = requests.get(target_url, **req_kwargs)
         if resp.status_code != 200:
             return item
 
@@ -179,7 +188,7 @@ def resolve_stream_urls(item, headers):
         open_now = soup.find('a', id='openNow')
         if open_now and open_now.get('href'):
             target_url = open_now['href']
-            resp = requests.get(target_url, headers=headers, timeout=15)
+            resp = requests.get(target_url, **req_kwargs)
             soup = BeautifulSoup(resp.text, 'html.parser')
 
         # If it's a series, check for episode data
@@ -305,7 +314,11 @@ def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21
             break
 
         try:
-            resp = requests.get(current_url, headers=headers, timeout=20)
+            req_kwargs = {"headers": headers, "timeout": 20}
+            if USE_CURL_CFFI:
+                req_kwargs["impersonate"] = "chrome120"
+
+            resp = requests.get(current_url, **req_kwargs)
             if resp.status_code != 200:
                 err_msg = f"HTTP {resp.status_code} from {current_url}: {resp.text[:100]}"
                 print(err_msg, flush=True)
