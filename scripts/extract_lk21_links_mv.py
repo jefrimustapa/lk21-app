@@ -346,15 +346,16 @@ def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21
         if max_pages > 0 and page_num > max_pages:
             break
 
-        html_text = fetch_html_page(current_url, headers)
-        if not html_text:
-            err_msg = f"Failed to fetch HTML content from {current_url}"
-            print(err_msg, flush=True)
-            if progress_callback:
-                progress_callback(phase="error", current=0, total=0, percentage=0.0, message=err_msg)
-            break
+        try:
+            html_text = fetch_html_page(current_url, headers)
+            if not html_text:
+                err_msg = f"Failed to fetch HTML content from {current_url}"
+                print(err_msg, flush=True)
+                if progress_callback:
+                    progress_callback(phase="error", current=0, total=0, percentage=0.0, message=err_msg)
+                break
 
-        soup = BeautifulSoup(html_text, 'html.parser')
+            soup = BeautifulSoup(html_text, 'html.parser')
 
             # Auto-detect total pages if max_pages <= 0
             if max_pages <= 0 and not total_pages_detected:
