@@ -418,16 +418,30 @@ def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21
     results = list(extracted_links.values())
 
     if extract_streams:
-        total_items = len(results)
-        print(f"\nResolving stream URLs for {total_items} items concurrently with 10 worker threads (updating {progress_db} live)...", flush=True)
+        completed_urls = get_existing_completed_urls(progress_db)
+        if not completed_urls:
+            completed_urls = get_existing_completed_urls(target_live_db)
+
+        items_to_process = [item for item in results if item['url'] not in completed_urls]
+        skipped_count = len(results) - len(items_to_process)
+        if skipped_count > 0:
+            print(f"Skipping {skipped_count} items already present and resolved in database.", flush=True)
+
+        total_items = len(items_to_process)
+        if total_items == 0:
+            print("All items are already fully resolved in the database. Nothing new to scrape.", flush=True)
+        else:
+            print(f"\nResolving stream URLs for {total_items} new/unresolved items concurrently with 10 worker threads...", flush=True)
+
         completed_count = 0
 
         def process_item(item):
             resolve_stream_urls(item, headers)
             return item
 
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_item = {executor.submit(process_item, item): item for item in results}
+        if items_to_process:
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                future_to_item = {executor.submit(process_item, item): item for item in items_to_process}
             for future in as_completed(future_to_item):
                 completed_count += 1
                 item = future.result()
@@ -473,9 +487,6 @@ def init_db_schema(db_filepath):
     # Enable WAL mode for high-concurrency non-blocking reads while writing
     cursor.execute("PRAGMA journal_mode=WAL;")
 
-    # Drop existing table to ensure 100% fresh clean restart on every run
-    cursor.execute("DROP TABLE IF EXISTS movies;")
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS movies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -499,6 +510,19 @@ def init_db_schema(db_filepath):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_movies_quality ON movies(quality)")
     conn.commit()
     conn.close()
+
+def get_existing_completed_urls(db_filepath):
+    if not os.path.exists(db_filepath):
+        return set()
+    try:
+        conn = sqlite3.connect(db_filepath)
+        cursor = conn.cursor()
+        cursor.execute("SELECT url FROM movies WHERE stream_url IS NOT NULL AND stream_url != '' AND stream_url != 'No stream iframe'")
+        rows = cursor.fetchall()
+        conn.close()
+        return {r[0] for r in rows if r[0]}
+    except Exception:
+        return set()
 
 def save_single_item_to_sqlite(item, db_filepath):
     conn = sqlite3.connect(db_filepath)
