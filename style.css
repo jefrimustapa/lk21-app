@@ -705,9 +705,12 @@ body.tv-mode .btn-close-detail:focus {
     position: relative;
     width: 100%;
     max-width: 800px;
+    max-height: calc(100vh - 40px);
     background-color: var(--bg-card);
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
 }
 
@@ -728,7 +731,9 @@ body.tv-mode .btn-close-detail:focus {
 
 .detail-banner {
     position: relative;
-    height: 300px;
+    height: 240px;
+    min-height: 180px;
+    flex-shrink: 0;
     background-size: cover;
     background-position: center;
     display: flex;
@@ -748,16 +753,18 @@ body.tv-mode .btn-close-detail:focus {
 }
 
 .detail-title {
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: 800;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .detail-body {
     padding: 25px;
     display: grid;
     grid-template-columns: 2fr 1fr;
-    gap: 30px;
+    gap: 25px;
+    overflow-y: auto;
+    max-height: calc(100vh - 280px);
 }
 
 .detail-synopsis {
@@ -765,6 +772,18 @@ body.tv-mode .btn-close-detail:focus {
     line-height: 1.6;
     color: #D4D4D4;
     margin-bottom: 20px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.detail-synopsis::-webkit-scrollbar {
+    width: 6px;
+}
+
+.detail-synopsis::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
 }
 
 .detail-info-group {
