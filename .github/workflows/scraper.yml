@@ -1,4 +1,4 @@
-name: Daily LK21 Scraper & Database Build
+name: Daily LK21 Scraper & Database Build - Movies
 
 on:
   schedule:
