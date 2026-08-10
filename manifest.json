@@ -1,0 +1,16 @@
+{
+  "short_name": "StreamFlix",
+  "name": "StreamFlix - Cinema & TV",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/color/512/netflix.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#141414",
+  "theme_color": "#E50914",
+  "display": "standalone",
+  "orientation": "any"
+}
