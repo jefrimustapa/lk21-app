@@ -9,3 +9,10 @@ test_*.db
 attachment/
 *.sql
 git-token
+node_modules/
+dist/
+android/local.properties
+android/.gradle/
+android/app/build/
+android/build/
+android/licenses/
