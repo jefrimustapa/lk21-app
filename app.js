@@ -359,13 +359,17 @@ function navigateDpad(direction) {
 
 /* Setup Keyboard, Top Genre Navigation & Search Listeners */
 function setupEventListeners() {
-    // Top-Left Genre Menu Click & Keyboard Listeners
-    const genreItems = document.querySelectorAll(".genre-item");
+    // Top-Left & Mobile Sub-Header Genre Menu Listeners
+    const genreItems = document.querySelectorAll(".genre-item, .genre-pill");
     genreItems.forEach(item => {
         const handler = () => {
             genreItems.forEach(i => i.classList.remove("active"));
-            item.classList.add("active");
-            activeGenre = item.getAttribute("data-genre");
+            const targetGenre = item.getAttribute("data-genre");
+            
+            // Highlight matching genre pills on both desktop nav and mobile sub-bar
+            document.querySelectorAll(`[data-genre="${targetGenre}"]`).forEach(el => el.classList.add("active"));
+
+            activeGenre = targetGenre;
             currentSearchQuery = "";
             document.getElementById("searchInput").value = "";
             loadMovies(1, true);
