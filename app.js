@@ -313,6 +313,23 @@ function resetHeroCarouselTimer() {
     }, 6000);
 }
 
+let playerHeaderTimer = null;
+
+function showPlayerHeaderTemporarily() {
+    const header = document.querySelector(".player-header");
+    if (!header) return;
+    
+    header.classList.remove("fade-out");
+    if (playerHeaderTimer) clearTimeout(playerHeaderTimer);
+    
+    playerHeaderTimer = setTimeout(() => {
+        const modal = document.getElementById("playerModal");
+        if (modal && !modal.classList.contains("hidden")) {
+            header.classList.add("fade-out");
+        }
+    }, 4000);
+}
+
 function openPlayerModal(movie) {
     const modal = document.getElementById("playerModal");
     const iframe = document.getElementById("videoIframe");
@@ -322,6 +339,13 @@ function openPlayerModal(movie) {
     iframe.src = playUrl;
     modal.classList.remove("hidden");
     
+    // Auto hide top header overlay over stream after 4 seconds of inactivity
+    showPlayerHeaderTemporarily();
+
+    // Re-show header when user touches screen or moves mouse/TV remote over player modal
+    modal.onmousemove = showPlayerHeaderTemporarily;
+    modal.ontouchstart = showPlayerHeaderTemporarily;
+
     // Push history state so Android hardware back button / browser back closes player & returns to catalog
     history.pushState({ modalOpen: "player" }, "");
     refreshFocusableElements();
@@ -332,6 +356,10 @@ function closePlayerModal(fromHistory = false) {
     const modal = document.getElementById("playerModal");
     if (modal.classList.contains("hidden")) return;
     
+    if (playerHeaderTimer) clearTimeout(playerHeaderTimer);
+    const header = document.querySelector(".player-header");
+    if (header) header.classList.remove("fade-out");
+
     const iframe = document.getElementById("videoIframe");
     iframe.src = "";
     modal.classList.add("hidden");
