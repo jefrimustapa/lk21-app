@@ -34,17 +34,24 @@ jobs:
         with:
           node-version: 18
 
-      - name: Build Android App via Capacitor
+      - name: Create Capacitor Project Config
         run: |
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
           mkdir -p dist
           cp index.html style.css app.js manifest.json dist/
-          npx cap init "LKflix" "com.lkflix.app" --web-dir dist
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.lkflix.app",
+            "appName": "LKflix",
+            "webDir": "dist",
+            "bundledWebRuntime": false
+          }
+          EOF
           npx cap add android
           npx cap copy android
 
-      - name: Build Signed Release APK via Gradle
+      - name: Build Release APK via Gradle
         run: |
           cd android
           chmod +x gradlew
