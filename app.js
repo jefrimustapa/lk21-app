@@ -53,6 +53,8 @@ function enableTvMode() {
     isTvMode = true;
     document.body.classList.add("tv-mode");
     document.getElementById("deviceModeText").innerText = "TV";
+    const icon = document.getElementById("deviceModeIcon");
+    if (icon) icon.className = "fa-solid fa-tv";
     refreshFocusableElements();
 }
 
@@ -60,6 +62,8 @@ function enableMobileMode() {
     isTvMode = false;
     document.body.classList.remove("tv-mode");
     document.getElementById("deviceModeText").innerText = "Mobile";
+    const icon = document.getElementById("deviceModeIcon");
+    if (icon) icon.className = "fa-solid fa-mobile-screen";
 }
 
 /* ==========================================================================
