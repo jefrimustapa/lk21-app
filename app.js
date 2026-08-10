@@ -92,7 +92,7 @@ async function loadMovies(page, resetGrid = false) {
         if (currentSearchQuery) {
             fetchUrl = `${API_BASE}/api/search?q=${encodeURIComponent(currentSearchQuery)}`;
         } else if (activeGenre && activeGenre !== "ALL") {
-            fetchUrl = `${API_BASE}/api/search?q=${encodeURIComponent(activeGenre)}`;
+            fetchUrl = `${API_BASE}/api/movies?genre=${encodeURIComponent(activeGenre)}&page=${page}&limit=${PAGE_LIMIT}`;
         } else {
             fetchUrl = `${API_BASE}/api/movies?page=${page}&limit=${PAGE_LIMIT}`;
         }
@@ -103,8 +103,8 @@ async function loadMovies(page, resetGrid = false) {
         if (json.status === "success" && json.data) {
             let movies = json.data;
 
-            // Client side genre filter refinement if using search API
-            if (activeGenre && activeGenre !== "ALL") {
+            // Fallback client side genre filter refinement if backend search was used
+            if (currentSearchQuery && activeGenre && activeGenre !== "ALL") {
                 movies = movies.filter(m => (m.genres || '').toLowerCase().includes(activeGenre.toLowerCase()));
             }
 
@@ -121,8 +121,8 @@ async function loadMovies(page, resetGrid = false) {
                 }
                 appendMoviesToGrid(movies);
 
-                // If searching or filtering single genre, search API returns all results at once
-                if (currentSearchQuery || (activeGenre && activeGenre !== "ALL")) {
+                // If searching, search API returns all results at once
+                if (currentSearchQuery) {
                     hasMore = false;
                 } else {
                     if (movies.length < PAGE_LIMIT) {
