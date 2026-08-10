@@ -50,6 +50,7 @@ jobs:
           EOF
           npx cap add android
           npx cap copy android
+          npx cap sync android
 
       - name: Build Release APK via Gradle
         run: |
