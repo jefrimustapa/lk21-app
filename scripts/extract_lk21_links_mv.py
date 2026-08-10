@@ -377,38 +377,46 @@ def scrape_lk21(start_url=None, max_pages=0, extract_streams=False, output_file=
         print(f"[{url_idx + 1}/{len(target_urls)}] Scraping Base URL: {base_clean}", flush=True)
         print(f"==================================================", flush=True)
 
-        p = 1
-        consecutive_empty = 0
-        while True:
-            if max_pages > 0 and p > max_pages:
-                print(f"Reached max page limit ({max_pages}) for {base_clean}. Moving to next base URL.", flush=True)
-                break
+        # Step 1: Fetch Page 1 to extract total pages
+        page1_html, status1 = fetch_html_page(base_url, headers)
+        if status1 in (403, 404) or not page1_html:
+            print(f"--> Received HTTP {status1} on {base_url}. Skipping base URL.", flush=True)
+            continue
 
-            if p == 1:
-                page_url = base_url
+        soup1 = BeautifulSoup(page1_html, 'html.parser')
+        match = re.search(r'dari\s+(\d+)\s+total\s+halaman', page1_html, re.I)
+        if match:
+            total_pages_detected = int(match.group(1))
+        else:
+            total_pages_detected = 50
+
+        if max_pages > 0:
+            target_total = min(max_pages, total_pages_detected)
+        else:
+            target_total = total_pages_detected
+
+        print(f"Detected {total_pages_detected} total pages. Scraping {target_total} pages in parallel with 10 worker threads...", flush=True)
+
+        page_urls = [base_url]
+        for p in range(2, target_total + 1):
+            if '/page/' in base_clean:
+                page_urls.append(re.sub(r'/page/\d+/?', f'/page/{p}/', base_clean))
             else:
-                if '/page/' in base_clean:
-                    page_url = re.sub(r'/page/\d+/?', f'/page/{p}/', base_clean)
-                else:
-                    page_url = f"{base_clean}/page/{p}/"
+                page_urls.append(f"{base_clean}/page/{p}/")
 
-            msg = f"[Base URL {url_idx + 1}/{len(target_urls)} - Page {p}] Fetching: {page_url}"
-            print(msg, flush=True)
-            if progress_callback:
-                progress_callback(phase="pages", current=p, total=0, percentage=0.0, message=msg)
-
+        def fetch_and_parse_page(url_info):
+            idx, page_url = url_info
             p_html, status_code = fetch_html_page(page_url, headers)
-            if status_code in (403, 404):
-                print(f"--> Received HTTP {status_code} on {page_url}. Reached page boundary! Skipping to next base URL.\n", flush=True)
-                break
-
-            if not p_html:
-                print(f"--> Failed to retrieve HTML on {page_url} (status: {status_code}). Skipping to next base URL.\n", flush=True)
-                break
+            if status_code in (403, 404) or not p_html:
+                return []
 
             p_soup = BeautifulSoup(p_html, 'html.parser')
-            p_items = []
             cards = p_soup.find_all('article')
+            # Discard fallback sidebar grid (when cards count > 50)
+            if len(cards) > 50:
+                return []
+
+            p_items = []
             if cards:
                 for card in cards:
                     a_tag = card.find('a', href=True)
@@ -421,24 +429,20 @@ def scrape_lk21(start_url=None, max_pages=0, extract_streams=False, output_file=
                     item = classify_card(a_tag, card_element=a_tag.parent, card_text=a_tag.get_text(), base_url=base_url)
                     if item:
                         p_items.append(item)
+            return p_items
 
-            new_count = 0
-            for item in p_items:
-                if item['url'] not in extracted_links:
-                    extracted_links[item['url']] = item
-                    new_count += 1
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(fetch_and_parse_page, (i, url)) for i, url in enumerate(page_urls)]
+            for future in as_completed(futures):
+                try:
+                    page_items = future.result()
+                    for item in page_items:
+                        if item['url'] not in extracted_links:
+                            extracted_links[item['url']] = item
+                except Exception as page_err:
+                    print(f"Error fetching page: {page_err}", flush=True)
 
-            print(f"    Found {len(p_items)} items ({new_count} new unique). Total catalog: {len(extracted_links)} items.", flush=True)
-
-            if len(p_items) == 0:
-                consecutive_empty += 1
-                if consecutive_empty >= 1:
-                    print(f"--> 0 items found on {page_url}. Reached end of catalog for this base URL! Moving to next.\n", flush=True)
-                    break
-            else:
-                consecutive_empty = 0
-
-            p += 1
+        print(f"Finished {base_clean}. Total accumulated catalog: {len(extracted_links)} unique items.", flush=True)
 
     results = list(extracted_links.values())
 
