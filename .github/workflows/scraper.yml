@@ -61,3 +61,11 @@ jobs:
             lk21_mv_live.db
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 9. Commit & Push Updated lk21_mv_live.db to Git Repository
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f lk21_mv_live.db
+          git commit -m "Auto-update lk21_mv_live.db [skip ci]" || echo "No changes to commit"
+          git push origin main
