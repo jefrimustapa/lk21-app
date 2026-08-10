@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "node -e \"require('fs').cpSync('.', 'dist', {recursive: true, filter: (src) => !src.includes('node_modules') && !src.includes('android') && !src.includes('.git') && !src.includes('dist')})\"",
+    "build": "node -e \"const fs=require('fs'); ['index.html','style.css','app.js','manifest.json'].forEach(f => fs.copyFileSync(f, 'dist/'+f));\"",
     "sync": "npm run build && npx cap copy android"
   },
   "dependencies": {
