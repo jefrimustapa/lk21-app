@@ -36,9 +36,9 @@ jobs:
           warp-cli --accept-tos connect || true
           sleep 3
 
-      - name: 5. Run Scraper (Auto-Detect All Pages)
+      - name: 5. Run Scraper (Auto-Detect All Pages, Cap at 50)
         run: |
-          python scripts/extract_lk21_links_mv.py --max-pages 0
+          python scripts/extract_lk21_links_mv.py --max-pages 50
 
       - name: 6. Convert SQLite DB to D1 Clean SQL Dump
         run: |

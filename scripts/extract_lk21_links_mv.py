@@ -364,8 +364,8 @@ def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21
         else:
             total_pages_detected = 50
 
-    target_total = total_pages_detected if max_pages <= 0 else min(max_pages, total_pages_detected)
-    print(f"Scraping {target_total} pages in parallel with 10 worker threads...", flush=True)
+    target_total = min(total_pages_detected, 50) if max_pages <= 0 else min(max_pages, total_pages_detected, 50)
+    print(f"Scraping {target_total} pages in parallel with 10 worker threads (capped at 50 max)...", flush=True)
 
     base_clean = start_url.rstrip('/')
     page_urls = [start_url]
