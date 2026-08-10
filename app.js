@@ -1,21 +1,27 @@
 /* ==========================================================================
-   StreamFlix - Application Logic & Cloudflare D1 Integration
+   LK-flix - Application Logic & Cloudflare D1 Infinite Scroll Integration
    ========================================================================== */
 
 const API_BASE = "https://lk21-api.lkapp.workers.dev";
+const PAGE_LIMIT = 24;
 
 // Application Global State
-let allMovies = [];
 let focusableElements = [];
-let currentFocusIndex = 0;
 let isTvMode = false;
-let currentActiveRow = 0;
+
+let activeGenre = "ALL";
+let currentSearchQuery = "";
+let currentPage = 1;
+let totalMoviesCount = 0;
+let isLoading = false;
+let hasMore = true;
 
 document.addEventListener("DOMContentLoaded", () => {
     detectDeviceMode();
-    fetchCatalogData();
+    initApp();
     setupEventListeners();
     setupDpadController();
+    setupInfiniteScroll();
 });
 
 /* ==========================================================================
@@ -29,14 +35,12 @@ function detectDeviceMode() {
                           userAgent.includes("hbbtv") || 
                           userAgent.includes("crkey");
                           
-    // Default to TV Mode for easy testing on Laptop/TV unless screen width is small (Phone)
     if (isTVUserAgent || window.innerWidth >= 1024) {
         enableTvMode();
     } else {
         enableMobileMode();
     }
 
-    // Auto adapt on window resize
     window.addEventListener("resize", () => {
         if (window.innerWidth < 768) {
             enableMobileMode();
@@ -62,69 +66,96 @@ function enableMobileMode() {
 }
 
 /* ==========================================================================
-   2. Fetch Data from Cloudflare Worker D1 API
+   2. App Initialization & Initial Data Fetch
    ========================================================================== */
-async function fetchCatalogData() {
-    try {
-        // Fetch up to 100 movies for rich categorization
-        const response = await fetch(`${API_BASE}/api/movies?page=1&limit=100`);
-        const json = await response.json();
+async function initApp() {
+    // 1. Fetch initial Page 1 data
+    await loadMovies(1, true);
 
+    // 2. Fetch Hero Billboard movie
+    try {
+        const res = await fetch(`${API_BASE}/api/movies?page=1&limit=1`);
+        const json = await res.json();
         if (json.status === "success" && json.data && json.data.length > 0) {
-            allMovies = json.data;
-            renderHeroBillboard(allMovies[0]);
-            renderCategoryRows(allMovies);
-            refreshFocusableElements();
-        } else {
-            console.error("API returned empty data:", json);
+            renderHeroBillboard(json.data[0]);
         }
-    } catch (err) {
-        console.error("Error fetching catalog from Cloudflare D1:", err);
+    } catch (e) {
+        console.error("Error loading hero banner:", e);
     }
 }
 
 /* ==========================================================================
-   3. Render UI Components (Hero & Horizontal Rows)
+   3. Core Movie Loading & Infinite Scroll Engine
    ========================================================================== */
-function renderHeroBillboard(movie) {
-    if (!movie) return;
-    
-    const hero = document.getElementById("heroBillboard");
-    const backdropImg = movie.poster_image || 'https://cover.showcdnx.com/wp-content/uploads/2021/12/film-spider-man-no-way-home-2021-lk21-d21.jpg';
-    
-    hero.style.backgroundImage = `url('${backdropImg}')`;
-    document.getElementById("heroTitle").innerText = movie.title || "Featured Title";
-    document.getElementById("heroRating").innerHTML = `<i class="fa-solid fa-star"></i> ${movie.rating || '8.0'}`;
-    document.getElementById("heroQuality").innerText = movie.quality || 'HD';
-    document.getElementById("heroType").innerText = (movie.type || 'MOVIE').toUpperCase();
-    document.getElementById("heroGenres").innerText = movie.genres || 'Action • Adventure';
-    document.getElementById("heroSynopsis").innerText = movie.synopsis || 'No synopsis available.';
+async function loadMovies(page, resetGrid = false) {
+    if (isLoading || (!hasMore && !resetGrid)) return;
+    isLoading = true;
+    showLoader(true);
 
-    // Bind Watch Now button to video player
-    document.getElementById("heroPlayBtn").onclick = () => openPlayerModal(movie);
-    document.getElementById("heroInfoBtn").onclick = () => openDetailModal(movie);
+    if (resetGrid) {
+        currentPage = 1;
+        hasMore = true;
+        document.getElementById("mainMovieGrid").innerHTML = "";
+    }
+
+    try {
+        let fetchUrl = "";
+        if (currentSearchQuery) {
+            fetchUrl = `${API_BASE}/api/search?q=${encodeURIComponent(currentSearchQuery)}`;
+        } else if (activeGenre && activeGenre !== "ALL") {
+            fetchUrl = `${API_BASE}/api/search?q=${encodeURIComponent(activeGenre)}`;
+        } else {
+            fetchUrl = `${API_BASE}/api/movies?page=${page}&limit=${PAGE_LIMIT}`;
+        }
+
+        const res = await fetch(fetchUrl);
+        const json = await res.json();
+
+        if (json.status === "success" && json.data) {
+            let movies = json.data;
+
+            // Client side genre filter refinement if using search API
+            if (activeGenre && activeGenre !== "ALL") {
+                movies = movies.filter(m => (m.genres || '').toLowerCase().includes(activeGenre.toLowerCase()));
+            }
+
+            if (json.total) totalMoviesCount = json.total;
+
+            if (movies.length === 0) {
+                if (resetGrid) {
+                    document.getElementById("mainMovieGrid").innerHTML = `<p style="color:#A3A3A3; padding: 30px; grid-column: 1/-1; text-align: center;">No movies found.</p>`;
+                }
+                hasMore = false;
+            } else {
+                appendMoviesToGrid(movies);
+
+                // If searching or filtering single genre, search API returns all results at once
+                if (currentSearchQuery || (activeGenre && activeGenre !== "ALL")) {
+                    hasMore = false;
+                } else {
+                    if (movies.length < PAGE_LIMIT) {
+                        hasMore = false;
+                    } else {
+                        currentPage++;
+                    }
+                }
+            }
+
+            updateCatalogTitle();
+        }
+    } catch (err) {
+        console.error("Error loading movies:", err);
+    } finally {
+        isLoading = false;
+        showLoader(false);
+        refreshFocusableElements();
+    }
 }
 
-function renderCategoryRows(movies) {
-    // Categorize movies
-    const trending = movies.slice(0, 15);
-    const action = movies.filter(m => (m.genres || '').toLowerCase().includes('action')).slice(0, 15);
-    const topRated = [...movies].sort((a, b) => parseFloat(b.rating || 0) - parseFloat(a.rating || 0)).slice(0, 15);
-    const animation = movies.filter(m => (m.genres || '').toLowerCase().includes('animation') || (m.genres || '').toLowerCase().includes('fantasy')).slice(0, 15);
+function appendMoviesToGrid(movies) {
+    const grid = document.getElementById("mainMovieGrid");
 
-    populateRow("rowTrending", trending.length ? trending : movies.slice(0, 10));
-    populateRow("rowAction", action.length ? action : movies.slice(10, 20));
-    populateRow("rowTopRated", topRated);
-    populateRow("rowAnimation", animation.length ? animation : movies.slice(20, 30));
-    populateRow("rowAll", movies);
-}
-
-function populateRow(rowId, movieGroup) {
-    const rowEl = document.getElementById(rowId);
-    if (!rowEl) return;
-    rowEl.innerHTML = "";
-
-    movieGroup.forEach(movie => {
+    movies.forEach(movie => {
         const card = document.createElement("div");
         card.className = "movie-card";
         card.setAttribute("tabindex", "0");
@@ -148,63 +179,73 @@ function populateRow(rowId, movieGroup) {
             }
         });
 
-        rowEl.appendChild(card);
+        grid.appendChild(card);
     });
 }
 
-/* ==========================================================================
-   4. Search Functionality
-   ========================================================================== */
-async function performSearch(query) {
-    if (!query || query.trim() === "") {
-        document.getElementById("searchResultsSection").classList.add("hidden");
-        document.getElementById("catalogRowsContainer").classList.remove("hidden");
-        refreshFocusableElements();
-        return;
+function updateCatalogTitle() {
+    const titleEl = document.getElementById("catalogTitle");
+    const countEl = document.getElementById("resultsCount");
+    const displayedCount = document.querySelectorAll("#mainMovieGrid .movie-card").length;
+
+    if (currentSearchQuery) {
+        titleEl.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> Search: "${currentSearchQuery}"`;
+    } else if (activeGenre && activeGenre !== "ALL") {
+        titleEl.innerHTML = `<i class="fa-solid fa-film"></i> ${activeGenre} Movies`;
+    } else {
+        titleEl.innerHTML = `<i class="fa-solid fa-fire"></i> All Movies & Cinema`;
     }
 
-    try {
-        const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query.trim())}`);
-        const json = await res.json();
+    countEl.innerText = `Showing ${displayedCount} of ${totalMoviesCount || 1200} titles`;
+}
 
-        const searchSection = document.getElementById("searchResultsSection");
-        const searchGrid = document.getElementById("searchResultsGrid");
-        document.getElementById("searchKeywordText").innerText = query;
-
-        searchGrid.innerHTML = "";
-        document.getElementById("catalogRowsContainer").classList.add("hidden");
-        searchSection.classList.remove("hidden");
-
-        if (json.status === "success" && json.data && json.data.length > 0) {
-            json.data.forEach(movie => {
-                const card = document.createElement("div");
-                card.className = "movie-card";
-                card.setAttribute("tabindex", "0");
-                card.innerHTML = `
-                    <img class="movie-poster" src="${movie.poster_image || ''}" alt="${movie.title}">
-                    <div class="movie-card-overlay">
-                        <div class="card-title">${movie.title}</div>
-                        <div class="card-meta">
-                            <span class="card-rating"><i class="fa-solid fa-star"></i> ${movie.rating || 'N/A'}</span>
-                            <span class="card-quality">${movie.quality || 'HD'}</span>
-                        </div>
-                    </div>
-                `;
-                card.onclick = () => openDetailModal(movie);
-                searchGrid.appendChild(card);
-            });
-        } else {
-            searchGrid.innerHTML = `<p style="color:#A3A3A3; padding: 20px;">No movies found matching "${query}".</p>`;
-        }
-        refreshFocusableElements();
-    } catch (err) {
-        console.error("Search error:", err);
+function showLoader(visible) {
+    const loader = document.getElementById("infiniteLoader");
+    if (loader) {
+        if (visible) loader.style.display = "flex";
+        else loader.style.display = "none";
     }
 }
 
+/* Setup Intersection Observer for Infinite Scroll */
+function setupInfiniteScroll() {
+    const sentinel = document.getElementById("scrollSentinel");
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !isLoading && hasMore) {
+            loadMovies(currentPage, false);
+        }
+    }, {
+        root: null,
+        rootMargin: "200px",
+        threshold: 0.1
+    });
+
+    observer.observe(sentinel);
+}
+
 /* ==========================================================================
-   5. Modals (Video Player & Details)
+   4. UI Components (Hero, Player & Details Modals)
    ========================================================================== */
+function renderHeroBillboard(movie) {
+    if (!movie) return;
+    
+    const hero = document.getElementById("heroBillboard");
+    const backdropImg = movie.poster_image || 'https://cover.showcdnx.com/wp-content/uploads/2021/12/film-spider-man-no-way-home-2021-lk21-d21.jpg';
+    
+    hero.style.backgroundImage = `url('${backdropImg}')`;
+    document.getElementById("heroTitle").innerText = movie.title || "Featured Title";
+    document.getElementById("heroRating").innerHTML = `<i class="fa-solid fa-star"></i> ${movie.rating || '8.0'}`;
+    document.getElementById("heroQuality").innerText = movie.quality || 'HD';
+    document.getElementById("heroType").innerText = (movie.type || 'MOVIE').toUpperCase();
+    document.getElementById("heroGenres").innerText = movie.genres || 'Action • Adventure';
+    document.getElementById("heroSynopsis").innerText = movie.synopsis || 'No synopsis available.';
+
+    document.getElementById("heroPlayBtn").onclick = () => openPlayerModal(movie);
+    document.getElementById("heroInfoBtn").onclick = () => openDetailModal(movie);
+}
+
 function openPlayerModal(movie) {
     const modal = document.getElementById("playerModal");
     const iframe = document.getElementById("videoIframe");
@@ -252,11 +293,10 @@ function closeDetailModal() {
 }
 
 /* ==========================================================================
-   6. Android TV D-Pad Remote Controller Navigation Logic
+   5. Android TV D-Pad Remote Controller Navigation Logic
    ========================================================================== */
 function refreshFocusableElements() {
-    // Collect all focusable elements currently visible in DOM
-    focusableElements = Array.from(document.querySelectorAll('button:not(.hidden), [tabindex="0"]:not(.hidden), input:not(.hidden), .movie-card:not(.hidden)'))
+    focusableElements = Array.from(document.querySelectorAll('button:not(.hidden), [tabindex="0"]:not(.hidden), input:not(.hidden), .movie-card:not(.hidden), .genre-item'))
                              .filter(el => el.offsetParent !== null);
 }
 
@@ -287,7 +327,6 @@ function navigateDpad(direction) {
         if (direction === "RIGHT" && rect.left >= currentRect.right - 10) isCandidate = true;
 
         if (isCandidate) {
-            // Distance formula to find nearest spatial neighbor
             const dx = (rect.left + rect.width / 2) - (currentRect.left + currentRect.width / 2);
             const dy = (rect.top + rect.height / 2) - (currentRect.top + currentRect.height / 2);
             const dist = Math.sqrt(dx * dx + dy * dy);
@@ -305,13 +344,56 @@ function navigateDpad(direction) {
     }
 }
 
-/* Setup Keyboard & Hardware D-Pad Remote Events */
+/* Setup Keyboard, Top Genre Navigation & Search Listeners */
 function setupEventListeners() {
+    // Top-Left Genre Menu Click & Keyboard Listeners
+    const genreItems = document.querySelectorAll(".genre-item");
+    genreItems.forEach(item => {
+        const handler = () => {
+            genreItems.forEach(i => i.classList.remove("active"));
+            item.classList.add("active");
+            activeGenre = item.getAttribute("data-genre");
+            currentSearchQuery = "";
+            document.getElementById("searchInput").value = "";
+            loadMovies(1, true);
+        };
+
+        item.addEventListener("click", handler);
+        item.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.keyCode === 13) {
+                handler();
+            }
+        });
+    });
+
+    // Logo Brand Click -> Reset to All
+    const brandLogo = document.getElementById("brandLogo");
+    if (brandLogo) {
+        brandLogo.onclick = () => {
+            genreItems.forEach(i => i.classList.remove("active"));
+            document.querySelector('.genre-item[data-genre="ALL"]').classList.add("active");
+            activeGenre = "ALL";
+            currentSearchQuery = "";
+            document.getElementById("searchInput").value = "";
+            loadMovies(1, true);
+        };
+    }
+
+    // Search Input Listener
+    let searchTimeout;
+    const searchInput = document.getElementById("searchInput");
+    searchInput.addEventListener("input", (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentSearchQuery = e.target.value.trim();
+            loadMovies(1, true);
+        }, 400);
+    });
+
     // Keyboard Event Listener for Android TV Remote Keys
     document.addEventListener("keydown", (e) => {
         const key = e.key;
 
-        // D-Pad Arrow Keys
         if (key === "ArrowUp" || e.keyCode === 38) {
             e.preventDefault();
             navigateDpad("UP");
@@ -324,9 +406,7 @@ function setupEventListeners() {
         } else if (key === "ArrowRight" || e.keyCode === 39) {
             e.preventDefault();
             navigateDpad("RIGHT");
-        } 
-        // Back Button (Esc or Backspace or TV Remote Back)
-        else if (key === "Escape" || e.keyCode === 27 || key === "Backspace" || e.keyCode === 10009) {
+        } else if (key === "Escape" || e.keyCode === 27 || key === "Backspace" || e.keyCode === 10009) {
             if (!document.getElementById("playerModal").classList.contains("hidden")) {
                 closePlayerModal();
             } else if (!document.getElementById("detailModal").classList.contains("hidden")) {
@@ -335,46 +415,10 @@ function setupEventListeners() {
         }
     });
 
-    // Close Modal Event Bindings
     document.getElementById("closePlayerBtn").onclick = closePlayerModal;
     document.getElementById("closeDetailBtn").onclick = closeDetailModal;
 
-    // Search input listener
-    let searchTimeout;
-    const searchInput = document.getElementById("searchInput");
-    searchInput.addEventListener("input", (e) => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => performSearch(e.target.value), 400);
-    });
-
-    // Genre Selector Dropdown Listener
-    const genreSelect = document.getElementById("genreSelect");
-    if (genreSelect) {
-        genreSelect.addEventListener("change", (e) => {
-            const selectedGenre = e.target.value;
-            if (selectedGenre === "ALL") {
-                document.getElementById("searchResultsSection").classList.add("hidden");
-                document.getElementById("catalogRowsContainer").classList.remove("hidden");
-                refreshFocusableElements();
-            } else if (selectedGenre) {
-                performSearch(selectedGenre);
-            }
-        });
-    }
-
-    // Home / Movies Navigation Buttons Listener
-    const navHomeBtn = document.getElementById("navHomeBtn");
-    if (navHomeBtn) {
-        navHomeBtn.onclick = () => {
-            document.getElementById("searchInput").value = "";
-            document.getElementById("genreSelect").value = "";
-            document.getElementById("searchResultsSection").classList.add("hidden");
-            document.getElementById("catalogRowsContainer").classList.remove("hidden");
-            refreshFocusableElements();
-        };
-    }
-
-    // Navbar Scrolling Glass Effect
+    // Navbar Glass Effect
     window.addEventListener("scroll", () => {
         const nav = document.getElementById("navbar");
         if (window.scrollY > 50) {
@@ -385,7 +429,6 @@ function setupEventListeners() {
     });
 }
 
-/* Virtual On-Screen D-Pad Remote Controller (For Laptop Testing) */
 function setupDpadController() {
     document.getElementById("btnDpadUp").onclick = () => navigateDpad("UP");
     document.getElementById("btnDpadDown").onclick = () => navigateDpad("DOWN");

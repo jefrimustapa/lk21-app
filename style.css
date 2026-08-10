@@ -74,7 +74,18 @@ body {
 .nav-left {
     display: flex;
     align-items: center;
-    gap: 40px;
+    gap: 30px;
+    overflow-x: auto;
+    max-width: 70%;
+}
+
+.nav-left::-webkit-scrollbar {
+    display: none;
+}
+
+.brand {
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
 .brand-text {
@@ -88,46 +99,87 @@ body {
     color: #FFFFFF;
 }
 
-.genre-select-btn {
-    background: rgba(0, 0, 0, 0.6);
-    color: var(--text-main);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 6px 14px;
-    border-radius: 4px;
-    font-size: 0.9rem;
+.genre-nav-bar {
+    display: flex;
+    list-style: none;
+    gap: 8px;
+    align-items: center;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: 4px 0;
+}
+
+.genre-nav-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.genre-item {
+    font-size: 0.85rem;
     font-weight: 600;
-    cursor: pointer;
-    outline: none;
-    transition: all var(--transition-fast);
-}
-
-.genre-select-btn:focus, .genre-select-btn:hover {
-    border-color: var(--netflix-red);
-    background: rgba(0, 0, 0, 0.9);
-}
-
-.genre-select-btn option {
-    background-color: #1f1f1f;
-    color: #FFFFFF;
-}
-
-.nav-item {
-    font-size: 0.95rem;
-    font-weight: 500;
     color: var(--text-muted);
     cursor: pointer;
-    padding: 6px 12px;
-    border-radius: 4px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all var(--transition-fast);
     outline: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
-.nav-item:hover, .nav-item.active {
+.genre-item:hover {
     color: var(--text-main);
+    background: rgba(255, 255, 255, 0.2);
 }
 
-.nav-item i {
-    margin-right: 6px;
+.genre-item.active {
+    color: #FFFFFF;
+    background: var(--netflix-red);
+    border-color: var(--netflix-red);
+    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);
+}
+
+.section-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+.results-count {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.infinite-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    border-top-color: var(--netflix-red);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 /* Navigation & Element Focus State (Critical for TV D-Pad & Keyboard) */

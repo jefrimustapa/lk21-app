@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StreamFlix - Premium Cinema Experience</title>
+    <title>LK-flix - Premium Cinema Experience</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,30 +20,20 @@
     <!-- Top Navigation Bar -->
     <nav class="navbar" id="navbar">
         <div class="nav-left">
-            <div class="brand">
-                <span class="brand-text">LK<span class="highlight">stream</span></span>
+            <div class="brand" tabindex="0" id="brandLogo">
+                <span class="brand-text">LK<span class="highlight">-flix</span></span>
             </div>
-            <ul class="nav-links">
-                <li class="nav-item active" tabindex="0" data-nav="home" id="navHomeBtn"><i class="fa-solid fa-house"></i> <span>Home</span></li>
-                <li class="nav-item" tabindex="0" data-nav="movies" id="navMoviesBtn"><i class="fa-solid fa-film"></i> <span>Movies</span></li>
-                <li class="nav-item genre-dropdown-container">
-                    <select id="genreSelect" tabindex="0" class="genre-select-btn">
-                        <option value="" selected disabled>Genres ▾</option>
-                        <option value="ALL">All Genres</option>
-                        <option value="Action">Action</option>
-                        <option value="Adventure">Adventure</option>
-                        <option value="Animation">Animation</option>
-                        <option value="Comedy">Comedy</option>
-                        <option value="Crime">Crime</option>
-                        <option value="Drama">Drama</option>
-                        <option value="Family">Family</option>
-                        <option value="Fantasy">Fantasy</option>
-                        <option value="Horror">Horror</option>
-                        <option value="Romance">Romance</option>
-                        <option value="Sci-Fi">Sci-Fi</option>
-                        <option value="Thriller">Thriller</option>
-                    </select>
-                </li>
+            <!-- Top-Left Horizontal Genre Bar -->
+            <ul class="nav-links genre-nav-bar" id="topGenreNav">
+                <li class="nav-item genre-item active" tabindex="0" data-genre="ALL"><i class="fa-solid fa-house"></i> <span>All</span></li>
+                <li class="nav-item genre-item" tabindex="0" data-genre="Action"><i class="fa-solid fa-gun"></i> <span>Action</span></li>
+                <li class="nav-item genre-item" tabindex="0" data-genre="Comedy"><i class="fa-solid fa-face-laugh-squint"></i> <span>Comedy</span></li>
+                <li class="nav-item genre-item" tabindex="0" data-genre="Horror"><i class="fa-solid fa-ghost"></i> <span>Horror</span></li>
+                <li class="nav-item genre-item" tabindex="0" data-genre="Sci-Fi"><i class="fa-solid fa-atom"></i> <span>Sci-Fi</span></li>
+                <li class="nav-item genre-item" tabindex="0" data-genre="Drama"><i class="fa-solid fa-masks-theater"></i> <span>Drama</span></li>
+                <li class="nav-item genre-item" tabindex="0" data-genre="Animation"><i class="fa-solid fa-wand-magic-sparkles"></i> <span>Animation</span></li>
+                <li class="nav-item genre-item" tabindex="0" data-genre="Thriller"><i class="fa-solid fa-skull"></i> <span>Thriller</span></li>
+                <li class="nav-item genre-item" tabindex="0" data-genre="Romance"><i class="fa-solid fa-heart"></i> <span>Romance</span></li>
             </ul>
         </div>
         <div class="nav-right">
@@ -80,64 +70,21 @@
             </div>
         </section>
 
-        <!-- Search Results Grid (Hidden by Default) -->
-        <section class="catalog-section search-results-section hidden" id="searchResultsSection">
-            <h2 class="section-title"><i class="fa-solid fa-magnifying-glass"></i> Search Results for "<span id="searchKeywordText"></span>"</h2>
-            <div class="movie-grid" id="searchResultsGrid"></div>
+        <!-- Dynamic Main Movie Grid Display (Filter / Search / Home View) -->
+        <section class="catalog-section" id="mainCatalogSection">
+            <div class="section-header-row">
+                <h2 class="section-title" id="catalogTitle"><i class="fa-solid fa-fire"></i> All Movies & Cinema</h2>
+                <span class="results-count" id="resultsCount">Loading content...</span>
+            </div>
+            <div class="movie-grid" id="mainMovieGrid"></div>
+
+            <!-- Dynamic Infinite Scroll Loading Spinner & Sentinel -->
+            <div class="infinite-loader" id="infiniteLoader">
+                <div class="spinner"></div>
+                <span>Loading more movies...</span>
+            </div>
+            <div id="scrollSentinel"></div>
         </section>
-
-        <!-- Dynamic Category Rows -->
-        <div id="catalogRowsContainer">
-            <!-- Row 1: Trending Now -->
-            <section class="catalog-section" data-row-id="trending">
-                <h2 class="section-title"><i class="fa-solid fa-fire"></i> Trending Now</h2>
-                <div class="movie-row-wrapper">
-                    <button class="scroll-arrow arrow-left" tabindex="-1"><i class="fa-solid fa-chevron-left"></i></button>
-                    <div class="movie-row" id="rowTrending"></div>
-                    <button class="scroll-arrow arrow-right" tabindex="-1"><i class="fa-solid fa-chevron-right"></i></button>
-                </div>
-            </section>
-
-            <!-- Row 2: Action Blockbusters -->
-            <section class="catalog-section" data-row-id="action">
-                <h2 class="section-title"><i class="fa-solid fa-gun"></i> High-Octane Action</h2>
-                <div class="movie-row-wrapper">
-                    <button class="scroll-arrow arrow-left" tabindex="-1"><i class="fa-solid fa-chevron-left"></i></button>
-                    <div class="movie-row" id="rowAction"></div>
-                    <button class="scroll-arrow arrow-right" tabindex="-1"><i class="fa-solid fa-chevron-right"></i></button>
-                </div>
-            </section>
-
-            <!-- Row 3: Top Rated -->
-            <section class="catalog-section" data-row-id="toprated">
-                <h2 class="section-title"><i class="fa-solid fa-trophy"></i> Top Rated Masterpieces</h2>
-                <div class="movie-row-wrapper">
-                    <button class="scroll-arrow arrow-left" tabindex="-1"><i class="fa-solid fa-chevron-left"></i></button>
-                    <div class="movie-row" id="rowTopRated"></div>
-                    <button class="scroll-arrow arrow-right" tabindex="-1"><i class="fa-solid fa-chevron-right"></i></button>
-                </div>
-            </section>
-
-            <!-- Row 4: Animation & Fantasy -->
-            <section class="catalog-section" data-row-id="animation">
-                <h2 class="section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Animation & Fantasy</h2>
-                <div class="movie-row-wrapper">
-                    <button class="scroll-arrow arrow-left" tabindex="-1"><i class="fa-solid fa-chevron-left"></i></button>
-                    <div class="movie-row" id="rowAnimation"></div>
-                    <button class="scroll-arrow arrow-right" tabindex="-1"><i class="fa-solid fa-chevron-right"></i></button>
-                </div>
-            </section>
-
-            <!-- Row 5: All Catalog Movies -->
-            <section class="catalog-section" data-row-id="all">
-                <h2 class="section-title"><i class="fa-solid fa-film"></i> Complete Collection</h2>
-                <div class="movie-row-wrapper">
-                    <button class="scroll-arrow arrow-left" tabindex="-1"><i class="fa-solid fa-chevron-left"></i></button>
-                    <div class="movie-row" id="rowAll"></div>
-                    <button class="scroll-arrow arrow-right" tabindex="-1"><i class="fa-solid fa-chevron-right"></i></button>
-                </div>
-            </section>
-        </div>
     </main>
 
     <!-- Movie Video Player Modal -->
