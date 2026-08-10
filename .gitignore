@@ -5,3 +5,7 @@ __pycache__/
 lk21_movies.db*
 lk21_mv.db*
 test_*.db
+.wrangler/
+attachment/
+*.sql
+git-token
