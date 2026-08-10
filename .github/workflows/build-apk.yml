@@ -2,7 +2,7 @@ name: Build & Release Android APK (LK-flix)
 
 on:
   push:
-    branches: [ main, gh-pages ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -32,21 +32,15 @@ jobs:
       - name: Install Bubblewrap CLI
         run: npm install -g @bubblewrap/cli
 
-      - name: Generate Android App Project from PWA
+      - name: Generate Android App Project from local manifest
         run: |
-          bubblewrap init --manifest=https://jefrimustapa.github.io/lk21-app/manifest.json --directory=android_build
+          bubblewrap init --manifest=manifest.json --directory=android_build
 
       - name: Build Signed Android APK
         run: |
           cd android_build
           keytool -genkeypair -dname "cn=LK-flix, ou=Media, o=LKflix, c=US" -alias android -keypass password -keystore android.keystore -storepass password -keyalg RSA -keysize 2048 -validity 10000
           bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --keyStorePassword=password --keyPassword=password
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: LK-flix-Android.apk
-          path: android_build/*.apk
 
       - name: Release APK on GitHub Releases
         uses: softprops/action-gh-release@v1
