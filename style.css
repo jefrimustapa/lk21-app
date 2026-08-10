@@ -765,6 +765,12 @@ body.tv-mode .btn-close-detail:focus {
     gap: 25px;
     overflow-y: auto;
     max-height: calc(100vh - 280px);
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+.detail-body::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Blink */
 }
 
 .detail-synopsis {
@@ -774,16 +780,12 @@ body.tv-mode .btn-close-detail:focus {
     margin-bottom: 20px;
     max-height: 180px;
     overflow-y: auto;
-    padding-right: 8px;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
 }
 
 .detail-synopsis::-webkit-scrollbar {
-    width: 6px;
-}
-
-.detail-synopsis::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.25);
-    border-radius: 4px;
+    display: none; /* Chrome/Safari/Blink */
 }
 
 .detail-info-group {
