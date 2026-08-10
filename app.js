@@ -207,22 +207,35 @@ function showLoader(visible) {
     }
 }
 
-/* Setup Intersection Observer for Infinite Scroll */
+/* Setup Intersection Observer for Infinite Scroll with Mobile Scroll Fallback */
 function setupInfiniteScroll() {
     const sentinel = document.getElementById("scrollSentinel");
     if (!sentinel) return;
 
-    const observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && !isLoading && hasMore) {
+    const checkAndLoadMore = () => {
+        if (!isLoading && hasMore) {
             loadMovies(currentPage, false);
+        }
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+            checkAndLoadMore();
         }
     }, {
         root: null,
-        rootMargin: "200px",
-        threshold: 0.1
+        rootMargin: "300px",
+        threshold: 0.01
     });
 
     observer.observe(sentinel);
+
+    // Fallback for mobile browsers where IntersectionObserver might lag
+    window.addEventListener("scroll", () => {
+        if ((window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 400)) {
+            checkAndLoadMore();
+        }
+    });
 }
 
 /* ==========================================================================

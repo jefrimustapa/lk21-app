@@ -745,16 +745,26 @@ body.tv-mode .btn-close-detail:focus {
    ========================================================================== */
 @media (max-width: 768px) {
     .navbar {
-        height: 56px;
-        padding: 0 15px;
+        height: 60px;
+        padding: 0 10px;
     }
     
-    .nav-links {
-        display: none; /* Hide top links on mobile, use bottom nav or compact menu */
+    .nav-left {
+        max-width: 65%;
+        gap: 12px;
+    }
+
+    .genre-nav-bar {
+        gap: 6px;
+    }
+
+    .genre-item {
+        padding: 4px 10px;
+        font-size: 0.75rem;
     }
 
     .brand-text {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
     }
 
     #searchInput {
