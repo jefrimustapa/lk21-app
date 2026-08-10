@@ -66,7 +66,8 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git pull origin main --rebase --autostash || true
           git add -f lk21_mv_live.db
           git commit -m "Auto-update lk21_mv_live.db [skip ci]" || echo "No changes to commit"
-          git pull origin main --rebase
           git push origin main
