@@ -547,9 +547,9 @@ function setupEventListeners() {
             const detailModal = document.getElementById("detailModal");
 
             if (playerModal && !playerModal.classList.contains("hidden")) {
-                closePlayerModal(false);
+                closePlayerModal(true);
             } else if (detailModal && !detailModal.classList.contains("hidden")) {
-                closeDetailModal(false);
+                closeDetailModal(true);
             } else if (data.canGoBack) {
                 window.history.back();
             } else {
