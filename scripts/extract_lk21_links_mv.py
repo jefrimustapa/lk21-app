@@ -30,6 +30,26 @@ EXCLUDED_PATHS = {
 
 EXCLUDED_PREFIXES = ('/genre/', '/country/', '/year/', '/director/', '/artist/', '/translator/', '/quality/')
 
+DEFAULT_BASE_URLS = [
+    "https://tv12.lk21official.cc/top-movie-today",
+    "https://tv12.lk21official.cc/genre/action",
+    "https://tv12.lk21official.cc/genre/horror",
+    "https://tv12.lk21official.cc/genre/comedy",
+    "https://tv12.lk21official.cc/genre/sci-fi",
+    "https://tv12.lk21official.cc/genre/romance",
+    "https://tv12.lk21official.cc/genre/animation",
+    "https://tv12.lk21official.cc/country/china",
+    "https://tv12.lk21official.cc/country/japan",
+    "https://tv12.lk21official.cc/country/south-korea",
+    "https://tv12.lk21official.cc/country/thailand",
+    "https://tv12.lk21official.cc/country/india",
+    "https://tv12.lk21official.cc/country/hong-kong",
+    "https://tv12.lk21official.cc/country/malaysia",
+    "https://tv12.lk21official.cc/country/russia",
+    "https://tv12.lk21official.cc/country/philippines",
+    "https://tv12.lk21official.cc/country/usa"
+]
+
 def classify_card(a_tag, card_element=None, card_text="", base_url="https://tv12.lk21official.cc"):
     href = a_tag.get('href', '')
     if not href or href == '#' or href.startswith('javascript:'):
@@ -291,12 +311,13 @@ def fetch_html_page(url, headers):
                 browser = p.chromium.launch(headless=True)
                 context = browser.new_context(user_agent=headers.get("User-Agent"))
                 page = context.new_page()
-                page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                resp = page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                status_code = resp.status if resp else 200
                 page.wait_for_timeout(2000)
                 html_content = page.content()
                 browser.close()
                 if html_content and "Just a moment..." not in html_content:
-                    return html_content
+                    return html_content, status_code
         except Exception as pw_err:
             print(f"[Playwright] Error fetching {url}: {pw_err}", flush=True)
 
@@ -305,13 +326,14 @@ def fetch_html_page(url, headers):
         if USE_CURL_CFFI:
             req_kwargs["impersonate"] = "chrome110"
         resp = requests.get(url, **req_kwargs)
-        if resp.status_code == 200:
-            return resp.text
-    except Exception:
-        pass
-    return None
+        return resp.text, resp.status_code
+    except Exception as e:
+        status = getattr(e, 'response', None)
+        code = status.status_code if status else 500
+        return None, code
+    return None, 404
 
-def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21_mv_live.db", progress_callback=None):
+def scrape_lk21(start_url=None, max_pages=0, extract_streams=False, output_file="lk21_mv_live.db", progress_callback=None, target_urls=None):
     extracted_links = {}
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -327,13 +349,18 @@ def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21
         "Upgrade-Insecure-Requests": "1"
     }
 
+    if not target_urls:
+        if start_url:
+            target_urls = [start_url]
+        else:
+            target_urls = DEFAULT_BASE_URLS
+
     target_live_db = output_file if output_file.endswith('.db') else "lk21_mv_live.db"
     if '_live.db' in target_live_db:
         progress_db = target_live_db.replace('_live.db', '.db')
     else:
         progress_db = target_live_db + '.tmp'
 
-    # If live DB exists, copy it over to progress_db to preserve existing dataset & update incrementally
     if os.path.exists(target_live_db) and not os.path.exists(progress_db):
         try:
             import shutil
@@ -342,87 +369,76 @@ def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21
         except Exception:
             pass
 
-    # Initialize schema (CREATE TABLE IF NOT EXISTS) without clearing data
     init_db_schema(progress_db)
 
-    current_url = start_url
-    page_num = 1
-    total_pages_detected = None
+    for url_idx, base_url in enumerate(target_urls):
+        base_clean = base_url.rstrip('/')
+        print(f"\n==================================================", flush=True)
+        print(f"[{url_idx + 1}/{len(target_urls)}] Scraping Base URL: {base_clean}", flush=True)
+        print(f"==================================================", flush=True)
 
-    # Step 1: Fetch Page 1 to detect total pages and extract initial items
-    html_text = fetch_html_page(start_url, headers)
-    if not html_text:
-        err_msg = f"Failed to fetch HTML content from {start_url}"
-        print(err_msg, flush=True)
-        if progress_callback:
-            progress_callback(phase="error", current=0, total=0, percentage=0.0, message=err_msg)
-        return []
+        p = 1
+        consecutive_empty = 0
+        while True:
+            if max_pages > 0 and p > max_pages:
+                print(f"Reached max page limit ({max_pages}) for {base_clean}. Moving to next base URL.", flush=True)
+                break
 
-    soup = BeautifulSoup(html_text, 'html.parser')
-    page_info_h3 = soup.find('h3', text=re.compile(r'dari\s+\d+\s+total\s+halaman', re.I))
-    if not page_info_h3:
-        match = re.search(r'dari\s+(\d+)\s+total\s+halaman', html_text, re.I)
-        if match:
-            total_pages_detected = int(match.group(1))
-        else:
-            total_pages_detected = 50
-    else:
-        match = re.search(r'dari\s+(\d+)\s+total\s+halaman', page_info_h3.text, re.I)
-        if match:
-            total_pages_detected = int(match.group(1))
-        else:
-            total_pages_detected = 50
+            if p == 1:
+                page_url = base_url
+            else:
+                if '/page/' in base_clean:
+                    page_url = re.sub(r'/page/\d+/?', f'/page/{p}/', base_clean)
+                else:
+                    page_url = f"{base_clean}/page/{p}/"
 
-    target_total = min(total_pages_detected, 50) if max_pages <= 0 else min(max_pages, total_pages_detected, 50)
-    print(f"Scraping {target_total} pages in parallel with 10 worker threads (capped at 50 max)...", flush=True)
+            msg = f"[Base URL {url_idx + 1}/{len(target_urls)} - Page {p}] Fetching: {page_url}"
+            print(msg, flush=True)
+            if progress_callback:
+                progress_callback(phase="pages", current=p, total=0, percentage=0.0, message=msg)
 
-    base_clean = start_url.rstrip('/')
-    page_urls = [start_url]
-    for p in range(2, target_total + 1):
-        if '/page/' in base_clean:
-            page_urls.append(re.sub(r'/page/\d+/?', f'/page/{p}/', base_clean))
-        else:
-            page_urls.append(f"{base_clean}/page/{p}/")
+            p_html, status_code = fetch_html_page(page_url, headers)
+            if status_code in (403, 404):
+                print(f"--> Received HTTP {status_code} on {page_url}. Reached page boundary! Skipping to next base URL.\n", flush=True)
+                break
 
-    def fetch_and_parse_page(url_info):
-        idx, page_url = url_info
-        page_pct = ((idx + 1) / target_total) * 100
-        msg = f"[Pages {idx + 1}/{target_total} - {page_pct:.1f}%] Fetching: {page_url}"
-        print(msg, flush=True)
-        if progress_callback:
-            progress_callback(phase="pages", current=idx + 1, total=target_total, percentage=round(page_pct, 1), message=msg)
+            if not p_html:
+                print(f"--> Failed to retrieve HTML on {page_url} (status: {status_code}). Skipping to next base URL.\n", flush=True)
+                break
 
-        p_html = fetch_html_page(page_url, headers)
-        if not p_html:
-            return []
-        
-        p_soup = BeautifulSoup(p_html, 'html.parser')
-        p_items = []
-        cards = p_soup.find_all('article')
-        if cards:
-            for card in cards:
-                a_tag = card.find('a', href=True)
-                if a_tag:
-                    item = classify_card(a_tag, card_element=card, card_text=card.get_text(), base_url=start_url)
+            p_soup = BeautifulSoup(p_html, 'html.parser')
+            p_items = []
+            cards = p_soup.find_all('article')
+            if cards:
+                for card in cards:
+                    a_tag = card.find('a', href=True)
+                    if a_tag:
+                        item = classify_card(a_tag, card_element=card, card_text=card.get_text(), base_url=base_url)
+                        if item:
+                            p_items.append(item)
+            else:
+                for a_tag in p_soup.find_all('a', href=True):
+                    item = classify_card(a_tag, card_element=a_tag.parent, card_text=a_tag.get_text(), base_url=base_url)
                     if item:
                         p_items.append(item)
-        else:
-            for a_tag in p_soup.find_all('a', href=True):
-                item = classify_card(a_tag, card_element=a_tag.parent, card_text=a_tag.get_text(), base_url=start_url)
-                if item:
-                    p_items.append(item)
-        return p_items
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(fetch_and_parse_page, (i, url)) for i, url in enumerate(page_urls)]
-        for future in as_completed(futures):
-            try:
-                page_items = future.result()
-                for item in page_items:
-                    if item['url'] not in extracted_links:
-                        extracted_links[item['url']] = item
-            except Exception as page_err:
-                print(f"Error fetching page: {page_err}", flush=True)
+            new_count = 0
+            for item in p_items:
+                if item['url'] not in extracted_links:
+                    extracted_links[item['url']] = item
+                    new_count += 1
+
+            print(f"    Found {len(p_items)} items ({new_count} new unique). Total catalog: {len(extracted_links)} items.", flush=True)
+
+            if len(p_items) == 0:
+                consecutive_empty += 1
+                if consecutive_empty >= 1:
+                    print(f"--> 0 items found on {page_url}. Reached end of catalog for this base URL! Moving to next.\n", flush=True)
+                    break
+            else:
+                consecutive_empty = 0
+
+            p += 1
 
     results = list(extracted_links.values())
 
@@ -632,11 +648,14 @@ def save_to_sqlite(items, db_filepath):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Strip LK21 Movie & Series Sublinks")
-    parser.add_argument("--url", default="https://tv12.lk21official.cc/top-movie-today", help="Target LK21 page URL")
-    parser.add_argument("--max-pages", type=int, default=10, help="Number of pages to scrape (Set 0 to auto-detect total pages)")
+    parser.add_argument("--url", default=None, help="Target single LK21 page URL")
+    parser.add_argument("--all-urls", action="store_true", help="Scrape all 17 default base URLs (genres, countries, top movies)")
+    parser.add_argument("--max-pages", type=int, default=0, help="Max pages per base URL (0 for unlimited until 403/404/empty)")
     parser.add_argument("--no-streams", action="store_true", help="Skip resolving stream/video player URLs")
     parser.add_argument("--output", default="lk21_mv_live.db", help="Output SQLite DB file name")
 
     args = parser.parse_args()
-    scrape_lk21(args.url, args.max_pages, extract_streams=not args.no_streams, output_file=args.output)
+
+    targets = DEFAULT_BASE_URLS if (args.all_urls or not args.url) else [args.url]
+    scrape_lk21(start_url=args.url, max_pages=args.max_pages, extract_streams=not args.no_streams, output_file=args.output, target_urls=targets)
 
