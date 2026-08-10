@@ -70,4 +70,9 @@ jobs:
           git pull origin main --rebase --autostash || true
           git add -f lk21_mv_live.db
           git commit -m "Auto-update lk21_mv_live.db [skip ci]" || echo "No changes to commit"
-          git push origin main
+      - name: 10. Deploy StreamFlix Web App to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
