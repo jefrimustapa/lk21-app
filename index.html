@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFlix - Premium Cinema Experience</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-dark">
+    <!-- Top Navigation Bar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-left">
+            <div class="brand">
+                <span class="brand-text">STREAM<span class="highlight">FLIX</span></span>
+            </div>
+            <ul class="nav-links">
+                <li class="nav-item active" tabindex="0" data-nav="home"><i class="fa-solid fa-house"></i> <span>Home</span></li>
+                <li class="nav-item" tabindex="0" data-nav="movies"><i class="fa-solid fa-film"></i> <span>Movies</span></li>
+                <li class="nav-item" tabindex="0" data-nav="series"><i class="fa-solid fa-tv"></i> <span>Series</span></li>
+                <li class="nav-item" tabindex="0" data-nav="action"><i class="fa-solid fa-fire"></i> <span>Action</span></li>
+                <li class="nav-item" tabindex="0" data-nav="animation"><i class="fa-solid fa-wand-magic-sparkles"></i> <span>Animation</span></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <div class="search-box" id="searchContainer">
+                <i class="fa-solid fa-magnifying-glass search-icon" tabindex="0" id="searchTrigger"></i>
+                <input type="text" id="searchInput" placeholder="Search title, genre, cast..." tabindex="0">
+            </div>
+            <div class="device-badge" id="deviceModeBadge">
+                <i class="fa-solid fa-tv"></i> <span id="deviceModeText">TV Mode</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Hero Featured Billboard Carousel -->
+        <section class="hero-billboard" id="heroBillboard">
+            <div class="hero-bg-overlay"></div>
+            <div class="hero-content">
+                <div class="hero-meta">
+                    <span class="badge quality-badge" id="heroQuality">4K ULTRA HD</span>
+                    <span class="badge rating-badge" id="heroRating"><i class="fa-solid fa-star"></i> 8.4</span>
+                    <span class="badge type-badge" id="heroType">MOVIE</span>
+                </div>
+                <h1 class="hero-title" id="heroTitle">Spider-Man: No Way Home</h1>
+                <div class="hero-genres" id="heroGenres">Action • Adventure • Sci-Fi</div>
+                <p class="hero-synopsis" id="heroSynopsis">
+                    Loading featured blockbuster title...
+                </p>
+                <div class="hero-actions">
+                    <button class="btn btn-play" id="heroPlayBtn" tabindex="0"><i class="fa-solid fa-play"></i> Watch Now</button>
+                    <button class="btn btn-info" id="heroInfoBtn" tabindex="0"><i class="fa-solid fa-circle-info"></i> Details</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search Results Grid (Hidden by Default) -->
+        <section class="catalog-section search-results-section hidden" id="searchResultsSection">
+            <h2 class="section-title"><i class="fa-solid fa-magnifying-glass"></i> Search Results for "<span id="searchKeywordText"></span>"</h2>
+            <div class="movie-grid" id="searchResultsGrid"></div>
+        </section>
+
+        <!-- Dynamic Category Rows -->
+        <div id="catalogRowsContainer">
+            <!-- Row 1: Trending Now -->
+            <section class="catalog-section" data-row-id="trending">
+                <h2 class="section-title"><i class="fa-solid fa-fire"></i> Trending Now</h2>
+                <div class="movie-row-wrapper">
+                    <button class="scroll-arrow arrow-left" tabindex="-1"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="movie-row" id="rowTrending"></div>
+                    <button class="scroll-arrow arrow-right" tabindex="-1"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </section>
+
+            <!-- Row 2: Action Blockbusters -->
+            <section class="catalog-section" data-row-id="action">
+                <h2 class="section-title"><i class="fa-solid fa-gun"></i> High-Octane Action</h2>
+                <div class="movie-row-wrapper">
+                    <button class="scroll-arrow arrow-left" tabindex="-1"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="movie-row" id="rowAction"></div>
+                    <button class="scroll-arrow arrow-right" tabindex="-1"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </section>
+
+            <!-- Row 3: Top Rated -->
+            <section class="catalog-section" data-row-id="toprated">
+                <h2 class="section-title"><i class="fa-solid fa-trophy"></i> Top Rated Masterpieces</h2>
+                <div class="movie-row-wrapper">
+                    <button class="scroll-arrow arrow-left" tabindex="-1"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="movie-row" id="rowTopRated"></div>
+                    <button class="scroll-arrow arrow-right" tabindex="-1"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </section>
+
+            <!-- Row 4: Animation & Fantasy -->
+            <section class="catalog-section" data-row-id="animation">
+                <h2 class="section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Animation & Fantasy</h2>
+                <div class="movie-row-wrapper">
+                    <button class="scroll-arrow arrow-left" tabindex="-1"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="movie-row" id="rowAnimation"></div>
+                    <button class="scroll-arrow arrow-right" tabindex="-1"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </section>
+
+            <!-- Row 5: All Catalog Movies -->
+            <section class="catalog-section" data-row-id="all">
+                <h2 class="section-title"><i class="fa-solid fa-film"></i> Complete Collection</h2>
+                <div class="movie-row-wrapper">
+                    <button class="scroll-arrow arrow-left" tabindex="-1"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="movie-row" id="rowAll"></div>
+                    <button class="scroll-arrow arrow-right" tabindex="-1"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Movie Video Player Modal -->
+    <div class="player-modal hidden" id="playerModal">
+        <div class="player-header">
+            <button class="btn-close-player" id="closePlayerBtn" tabindex="0"><i class="fa-solid fa-xmark"></i> Close</button>
+            <span class="player-title" id="playerTitle">Now Playing</span>
+        </div>
+        <div class="player-container">
+            <iframe id="videoIframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+        </div>
+    </div>
+
+    <!-- Movie Details Modal -->
+    <div class="detail-modal hidden" id="detailModal">
+        <div class="detail-card">
+            <button class="btn-close-detail" id="closeDetailBtn" tabindex="0"><i class="fa-solid fa-xmark"></i></button>
+            <div class="detail-banner" id="detailBanner">
+                <div class="detail-banner-overlay"></div>
+                <div class="detail-quick-info">
+                    <h2 class="detail-title" id="detailTitle">Movie Title</h2>
+                    <div class="detail-tags">
+                        <span class="badge rating-badge" id="detailRating"><i class="fa-solid fa-star"></i> 8.0</span>
+                        <span class="badge quality-badge" id="detailQuality">HD</span>
+                        <span class="badge type-badge" id="detailType">MOVIE</span>
+                    </div>
+                </div>
+            </div>
+            <div class="detail-body">
+                <div class="detail-left">
+                    <p class="detail-synopsis" id="detailSynopsis">Synopsis loading...</p>
+                    <div class="detail-actions">
+                        <button class="btn btn-play" id="detailPlayBtn" tabindex="0"><i class="fa-solid fa-play"></i> Start Watching</button>
+                    </div>
+                </div>
+                <div class="detail-right">
+                    <div class="detail-info-group">
+                        <span class="info-label">Genres:</span>
+                        <span class="info-val" id="detailGenres">-</span>
+                    </div>
+                    <div class="detail-info-group">
+                        <span class="info-label">Cast:</span>
+                        <span class="info-val" id="detailCast">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- On-Screen Virtual D-Pad Controller for TV Testing -->
+    <div class="dpad-controller" id="dpadController">
+        <div class="dpad-title"><i class="fa-solid fa-gamepad"></i> TV Remote Simulator</div>
+        <div class="dpad-grid">
+            <button class="dpad-btn dpad-up" id="btnDpadUp"><i class="fa-solid fa-caret-up"></i></button>
+            <button class="dpad-btn dpad-left" id="btnDpadLeft"><i class="fa-solid fa-caret-left"></i></button>
+            <button class="dpad-btn dpad-ok" id="btnDpadOk">OK</button>
+            <button class="dpad-btn dpad-right" id="btnDpadRight"><i class="fa-solid fa-caret-right"></i></button>
+            <button class="dpad-btn dpad-down" id="btnDpadDown"><i class="fa-solid fa-caret-down"></i></button>
+        </div>
+        <div class="dpad-extra">
+            <button class="dpad-extra-btn" id="btnDpadBack"><i class="fa-solid fa-rotate-left"></i> Back (Esc)</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
