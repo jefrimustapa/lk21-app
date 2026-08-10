@@ -347,6 +347,33 @@ function setupEventListeners() {
         searchTimeout = setTimeout(() => performSearch(e.target.value), 400);
     });
 
+    // Genre Selector Dropdown Listener
+    const genreSelect = document.getElementById("genreSelect");
+    if (genreSelect) {
+        genreSelect.addEventListener("change", (e) => {
+            const selectedGenre = e.target.value;
+            if (selectedGenre === "ALL") {
+                document.getElementById("searchResultsSection").classList.add("hidden");
+                document.getElementById("catalogRowsContainer").classList.remove("hidden");
+                refreshFocusableElements();
+            } else if (selectedGenre) {
+                performSearch(selectedGenre);
+            }
+        });
+    }
+
+    // Home / Movies Navigation Buttons Listener
+    const navHomeBtn = document.getElementById("navHomeBtn");
+    if (navHomeBtn) {
+        navHomeBtn.onclick = () => {
+            document.getElementById("searchInput").value = "";
+            document.getElementById("genreSelect").value = "";
+            document.getElementById("searchResultsSection").classList.add("hidden");
+            document.getElementById("catalogRowsContainer").classList.remove("hidden");
+            refreshFocusableElements();
+        };
+    }
+
     // Navbar Scrolling Glass Effect
     window.addEventListener("scroll", () => {
         const nav = document.getElementById("navbar");

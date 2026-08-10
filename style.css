@@ -88,10 +88,27 @@ body {
     color: #FFFFFF;
 }
 
-.nav-links {
-    display: flex;
-    list-style: none;
-    gap: 20px;
+.genre-select-btn {
+    background: rgba(0, 0, 0, 0.6);
+    color: var(--text-main);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: all var(--transition-fast);
+}
+
+.genre-select-btn:focus, .genre-select-btn:hover {
+    border-color: var(--netflix-red);
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.genre-select-btn option {
+    background-color: #1f1f1f;
+    color: #FFFFFF;
 }
 
 .nav-item {
