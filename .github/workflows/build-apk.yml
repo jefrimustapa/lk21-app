@@ -1,0 +1,59 @@
+name: Build & Release Android APK (LK-flix)
+
+on:
+  push:
+    branches: [ main, gh-pages ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: Install Bubblewrap CLI
+        run: npm install -g @bubblewrap/cli
+
+      - name: Generate Android App Project from PWA
+        run: |
+          bubblewrap init --manifest=https://jefrimustapa.github.io/lk21-app/manifest.json --directory=android_build
+
+      - name: Build Signed Android APK
+        run: |
+          cd android_build
+          keytool -genkeypair -dname "cn=LK-flix, ou=Media, o=LKflix, c=US" -alias android -keypass password -keystore android.keystore -storepass password -keyalg RSA -keysize 2048 -validity 10000
+          bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --keyStorePassword=password --keyPassword=password
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LK-flix-Android.apk
+          path: android_build/*.apk
+
+      - name: Release APK on GitHub Releases
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: latest-apk
+          name: "LK-flix Android APK Install File"
+          body: "Direct Android APK package installer for LK-flix."
+          files: android_build/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
