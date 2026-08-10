@@ -540,6 +540,24 @@ function setupEventListeners() {
         }
     });
 
+    // Capacitor Native Android Hardware Back Button listener
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+        window.Capacitor.Plugins.App.addListener('backButton', (data) => {
+            const playerModal = document.getElementById("playerModal");
+            const detailModal = document.getElementById("detailModal");
+
+            if (playerModal && !playerModal.classList.contains("hidden")) {
+                closePlayerModal(false);
+            } else if (detailModal && !detailModal.classList.contains("hidden")) {
+                closeDetailModal(false);
+            } else if (data.canGoBack) {
+                window.history.back();
+            } else {
+                window.Capacitor.Plugins.App.minimizeApp();
+            }
+        });
+    }
+
     document.getElementById("closePlayerBtn").onclick = () => closePlayerModal(false);
     document.getElementById("closeDetailBtn").onclick = () => closeDetailModal(false);
 
