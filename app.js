@@ -20,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
     detectDeviceMode();
     initApp();
     setupEventListeners();
-    setupDpadController();
     setupInfiniteScroll();
 });
 
@@ -53,16 +52,14 @@ function detectDeviceMode() {
 function enableTvMode() {
     isTvMode = true;
     document.body.classList.add("tv-mode");
-    document.getElementById("deviceModeText").innerText = "TV Mode (D-Pad Ready)";
-    document.getElementById("dpadController").classList.remove("hidden");
+    document.getElementById("deviceModeText").innerText = "TV";
     refreshFocusableElements();
 }
 
 function enableMobileMode() {
     isTvMode = false;
     document.body.classList.remove("tv-mode");
-    document.getElementById("deviceModeText").innerText = "Mobile Touch Mode";
-    document.getElementById("dpadController").classList.add("hidden");
+    document.getElementById("deviceModeText").innerText = "Mobile";
 }
 
 /* ==========================================================================
@@ -161,10 +158,20 @@ function appendMoviesToGrid(movies) {
         card.setAttribute("tabindex", "0");
         card.setAttribute("data-movie-id", movie.id);
 
+        // Format title so year appears in parentheses e.g. "Spider-Man (2026)"
+        let displayTitle = movie.title || "Untitled";
+        displayTitle = displayTitle.replace(/\s*(?:-|\b)\s*(\d{4})\s*$/, ' ($1)');
+        if (!/\(\d{4}\)/.test(displayTitle)) {
+            const yrMatch = displayTitle.match(/\b(19\d\d|20\d\d)\b/);
+            if (yrMatch && !displayTitle.includes(`(${yrMatch[1]})`)) {
+                displayTitle = displayTitle.replace(yrMatch[1], `(${yrMatch[1]})`);
+            }
+        }
+
         card.innerHTML = `
             <img class="movie-poster" src="${movie.poster_image || 'https://via.placeholder.com/200x300'}" alt="${movie.title}" loading="lazy">
             <div class="movie-card-overlay">
-                <div class="card-title">${movie.title}</div>
+                <div class="card-title">${displayTitle}</div>
                 <div class="card-meta">
                     <span class="card-rating"><i class="fa-solid fa-star"></i> ${movie.rating || 'N/A'}</span>
                     <span class="card-quality">${movie.quality || 'HD'}</span>
@@ -267,15 +274,24 @@ function openPlayerModal(movie) {
     const playUrl = movie.stream_url || movie.iframe_url || "https://videonode.de/iframe/p2p/fa848b1095647d3c9865199f5020636d";
     iframe.src = playUrl;
     modal.classList.remove("hidden");
+    
+    // Push history state so Android hardware back button / browser back closes player & returns to catalog
+    history.pushState({ modalOpen: "player" }, "");
     refreshFocusableElements();
     document.getElementById("closePlayerBtn").focus();
 }
 
-function closePlayerModal() {
+function closePlayerModal(fromHistory = false) {
     const modal = document.getElementById("playerModal");
+    if (modal.classList.contains("hidden")) return;
+    
     const iframe = document.getElementById("videoIframe");
     iframe.src = "";
     modal.classList.add("hidden");
+    
+    if (!fromHistory && history.state && history.state.modalOpen === "player") {
+        history.back();
+    }
     refreshFocusableElements();
 }
 
@@ -296,14 +312,22 @@ function openDetailModal(movie) {
     };
 
     modal.classList.remove("hidden");
+    history.pushState({ modalOpen: "detail" }, "");
     refreshFocusableElements();
     document.getElementById("detailPlayBtn").focus();
 }
 
-function closeDetailModal() {
-    document.getElementById("detailModal").classList.add("hidden");
+function closeDetailModal(fromHistory = false) {
+    const modal = document.getElementById("detailModal");
+    if (modal.classList.contains("hidden")) return;
+
+    modal.classList.add("hidden");
+    if (!fromHistory && history.state && history.state.modalOpen === "detail") {
+        history.back();
+    }
     refreshFocusableElements();
 }
+
 
 /* ==========================================================================
    5. Android TV D-Pad Remote Controller Navigation Logic
@@ -432,8 +456,17 @@ function setupEventListeners() {
         }
     });
 
-    document.getElementById("closePlayerBtn").onclick = closePlayerModal;
-    document.getElementById("closeDetailBtn").onclick = closeDetailModal;
+    // Android hardware Back Button / Browser Back button handling
+    window.addEventListener("popstate", (e) => {
+        if (!document.getElementById("playerModal").classList.contains("hidden")) {
+            closePlayerModal(true);
+        } else if (!document.getElementById("detailModal").classList.contains("hidden")) {
+            closeDetailModal(true);
+        }
+    });
+
+    document.getElementById("closePlayerBtn").onclick = () => closePlayerModal(false);
+    document.getElementById("closeDetailBtn").onclick = () => closeDetailModal(false);
 
     // Navbar Glass Effect
     window.addEventListener("scroll", () => {
@@ -444,21 +477,4 @@ function setupEventListeners() {
             nav.classList.remove("scrolled");
         }
     });
-}
-
-function setupDpadController() {
-    document.getElementById("btnDpadUp").onclick = () => navigateDpad("UP");
-    document.getElementById("btnDpadDown").onclick = () => navigateDpad("DOWN");
-    document.getElementById("btnDpadLeft").onclick = () => navigateDpad("LEFT");
-    document.getElementById("btnDpadRight").onclick = () => navigateDpad("RIGHT");
-    document.getElementById("btnDpadOk").onclick = () => {
-        if (document.activeElement) document.activeElement.click();
-    };
-    document.getElementById("btnDpadBack").onclick = () => {
-        if (!document.getElementById("playerModal").classList.contains("hidden")) {
-            closePlayerModal();
-        } else if (!document.getElementById("detailModal").classList.contains("hidden")) {
-            closeDetailModal();
-        }
-    };
 }
