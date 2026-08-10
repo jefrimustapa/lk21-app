@@ -38,7 +38,9 @@ jobs:
         run: |
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "LKflix" "com.lkflix.app" --web-dir .
+          mkdir -p dist
+          cp index.html style.css app.js manifest.json dist/
+          npx cap init "LKflix" "com.lkflix.app" --web-dir dist
           npx cap add android
           npx cap copy android
 
