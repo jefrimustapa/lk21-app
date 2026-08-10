@@ -354,7 +354,7 @@ function openDetailModal(movie) {
     document.getElementById("detailCast").innerText = movie.cast || "-";
 
     document.getElementById("detailPlayBtn").onclick = () => {
-        closeDetailModal();
+        closeDetailModal(true);
         openPlayerModal(movie);
     };
 
