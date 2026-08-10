@@ -623,7 +623,7 @@ def save_to_sqlite(items, db_filepath):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Strip LK21 Movie & Series Sublinks")
-    parser.add_argument("--url", default="https://tv12.lk21official.cc/latest", help="Target LK21 page URL")
+    parser.add_argument("--url", default="https://tv12.lk21official.cc/top-movie-today", help="Target LK21 page URL")
     parser.add_argument("--max-pages", type=int, default=10, help="Number of pages to scrape (Set 0 to auto-detect total pages)")
     parser.add_argument("--no-streams", action="store_true", help="Skip resolving stream/video player URLs")
     parser.add_argument("--output", default="lk21_mv_live.db", help="Output SQLite DB file name")
