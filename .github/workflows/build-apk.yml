@@ -26,21 +26,25 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
+      - name: Setup Android SDK & Accept Licenses
         uses: android-actions/setup-android@v2
+
+      - name: Accept Android Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Install Bubblewrap CLI
         run: npm install -g @bubblewrap/cli
 
-      - name: Generate Android App Project from local manifest
+      - name: Generate Android App Project
         run: |
-          yes | bubblewrap init --manifest=manifest.json --directory=android_build || true
+          npx @bubblewrap/cli init --manifest=https://jefrimustapa.github.io/lk21-app/manifest.json --directory=android_build --skipSigning
 
       - name: Build Signed Android APK
         run: |
           cd android_build
           keytool -genkeypair -dname "cn=LK-flix, ou=Media, o=LKflix, c=US" -alias android -keypass password -keystore android.keystore -storepass password -keyalg RSA -keysize 2048 -validity 10000
-          bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --keyStorePassword=password --keyPassword=password
+          npx @bubblewrap/cli build --signingKeyPath=android.keystore --signingKeyAlias=android --keyStorePassword=password --keyPassword=password
 
       - name: Release APK on GitHub Releases
         uses: softprops/action-gh-release@v1
