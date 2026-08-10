@@ -311,6 +311,32 @@ body.tv-mode .btn-close-detail:focus {
     align-items: center;
     padding: 0 4%;
     margin-bottom: -60px;
+    transition: background-image 0.8s ease-in-out;
+}
+
+.hero-indicators {
+    position: absolute;
+    bottom: 80px;
+    right: 4%;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+}
+
+.hero-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.hero-dot.active {
+    width: 24px;
+    border-radius: 12px;
+    background: var(--netflix-red);
+    box-shadow: 0 0 10px rgba(229, 9, 20, 0.8);
 }
 
 .hero-bg-overlay {

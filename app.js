@@ -66,19 +66,7 @@ function enableMobileMode() {
    2. App Initialization & Initial Data Fetch
    ========================================================================== */
 async function initApp() {
-    // 1. Fetch initial Page 1 data
     await loadMovies(1, true);
-
-    // 2. Fetch Hero Billboard movie
-    try {
-        const res = await fetch(`${API_BASE}/api/movies?page=1&limit=1`);
-        const json = await res.json();
-        if (json.status === "success" && json.data && json.data.length > 0) {
-            renderHeroBillboard(json.data[0]);
-        }
-    } catch (e) {
-        console.error("Error loading hero banner:", e);
-    }
 }
 
 /* ==========================================================================
@@ -124,6 +112,9 @@ async function loadMovies(page, resetGrid = false) {
                 }
                 hasMore = false;
             } else {
+                if (resetGrid) {
+                    setupHeroCarousel(movies);
+                }
                 appendMoviesToGrid(movies);
 
                 // If searching or filtering single genre, search API returns all results at once
@@ -248,9 +239,44 @@ function setupInfiniteScroll() {
 /* ==========================================================================
    4. UI Components (Hero, Player & Details Modals)
    ========================================================================== */
-function renderHeroBillboard(movie) {
-    if (!movie) return;
-    
+let heroCarouselItems = [];
+let heroCarouselIndex = 0;
+let heroCarouselTimer = null;
+
+function setupHeroCarousel(movies) {
+    if (!movies || movies.length === 0) return;
+
+    // Shuffle and pick 5 random movies from current filtered dataset
+    const shuffled = [...movies].sort(() => 0.5 - Math.random());
+    heroCarouselItems = shuffled.slice(0, 5);
+    heroCarouselIndex = 0;
+
+    renderHeroCarouselSlide(heroCarouselIndex);
+
+    // Build indicator dots
+    const container = document.getElementById("heroIndicators");
+    if (container) {
+        container.innerHTML = heroCarouselItems.map((_, idx) => 
+            `<div class="hero-dot ${idx === 0 ? 'active' : ''}" data-idx="${idx}"></div>`
+        ).join("");
+
+        container.querySelectorAll(".hero-dot").forEach(dot => {
+            dot.onclick = (e) => {
+                const targetIdx = parseInt(e.currentTarget.getAttribute("data-idx"));
+                heroCarouselIndex = targetIdx;
+                renderHeroCarouselSlide(heroCarouselIndex);
+                resetHeroCarouselTimer();
+            };
+        });
+    }
+
+    resetHeroCarouselTimer();
+}
+
+function renderHeroCarouselSlide(index) {
+    if (!heroCarouselItems || heroCarouselItems.length === 0) return;
+    const movie = heroCarouselItems[index % heroCarouselItems.length];
+
     const hero = document.getElementById("heroBillboard");
     const backdropImg = movie.poster_image || 'https://cover.showcdnx.com/wp-content/uploads/2021/12/film-spider-man-no-way-home-2021-lk21-d21.jpg';
     
@@ -264,6 +290,23 @@ function renderHeroBillboard(movie) {
 
     document.getElementById("heroPlayBtn").onclick = () => openPlayerModal(movie);
     document.getElementById("heroInfoBtn").onclick = () => openDetailModal(movie);
+
+    // Update active dot indicator
+    const dots = document.querySelectorAll("#heroIndicators .hero-dot");
+    dots.forEach((dot, idx) => {
+        if (idx === index) dot.classList.add("active");
+        else dot.classList.remove("active");
+    });
+}
+
+function resetHeroCarouselTimer() {
+    if (heroCarouselTimer) clearInterval(heroCarouselTimer);
+    heroCarouselTimer = setInterval(() => {
+        if (heroCarouselItems && heroCarouselItems.length > 0) {
+            heroCarouselIndex = (heroCarouselIndex + 1) % heroCarouselItems.length;
+            renderHeroCarouselSlide(heroCarouselIndex);
+        }
+    }, 6000);
 }
 
 function openPlayerModal(movie) {
