@@ -58,8 +58,8 @@ export default {
           return new Response(JSON.stringify({ status: "error", message: "Missing query parameter 'q'" }), { status: 400, headers: corsHeaders });
         }
 
-        const { results } = await env.DB.prepare("SELECT * FROM movies WHERE title LIKE ? OR synopsis LIKE ? LIMIT 50")
-          .bind(`%${query}%`, `%${query}%`)
+        const { results } = await env.DB.prepare("SELECT * FROM movies WHERE title LIKE ? OR genres LIKE ? OR cast LIKE ? OR synopsis LIKE ? LIMIT 50")
+          .bind(`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`)
           .all();
 
         return new Response(JSON.stringify({
