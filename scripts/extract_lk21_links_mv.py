@@ -333,7 +333,16 @@ def scrape_lk21(start_url, max_pages=2, extract_streams=False, output_file="lk21
     else:
         progress_db = target_live_db + '.tmp'
 
-    # Immediately wipe old progress_db and initialize fresh schema before fetching pages
+    # If live DB exists, copy it over to progress_db to preserve existing dataset & update incrementally
+    if os.path.exists(target_live_db) and not os.path.exists(progress_db):
+        try:
+            import shutil
+            shutil.copy2(target_live_db, progress_db)
+            print(f"Loaded existing database {target_live_db} for incremental update.", flush=True)
+        except Exception:
+            pass
+
+    # Initialize schema (CREATE TABLE IF NOT EXISTS) without clearing data
     init_db_schema(progress_db)
 
     current_url = start_url
