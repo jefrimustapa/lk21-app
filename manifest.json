@@ -1,14 +1,17 @@
 {
-  "short_name": "LKstream",
-  "name": "LKstream - Premium Cinema",
+  "short_name": "LKflix",
+  "name": "LK-flix - Cinema & TV",
+  "id": "com.lkflix.app",
+  "start_url": "https://jefrimustapa.github.io/lk21-app/",
+  "scope": "https://jefrimustapa.github.io/lk21-app/",
   "icons": [
     {
       "src": "https://img.icons8.com/color/512/netflix.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": "./index.html",
   "background_color": "#141414",
   "theme_color": "#E50914",
   "display": "standalone",

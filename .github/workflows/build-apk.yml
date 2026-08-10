@@ -34,7 +34,7 @@ jobs:
 
       - name: Generate Android App Project from local manifest
         run: |
-          bubblewrap init --manifest=manifest.json --directory=android_build
+          yes | bubblewrap init --manifest=manifest.json --directory=android_build || true
 
       - name: Build Signed Android APK
         run: |
