@@ -28,25 +28,44 @@ document.addEventListener("DOMContentLoaded", () => {
    ========================================================================== */
 function detectDeviceMode() {
     const userAgent = navigator.userAgent.toLowerCase();
-    const isTVUserAgent = userAgent.includes("googletv") || 
-                          userAgent.includes("android tv") || 
-                          userAgent.includes("smart-tv") || 
-                          userAgent.includes("hbbtv") || 
-                          userAgent.includes("crkey");
-                          
-    if (isTVUserAgent || window.innerWidth >= 1024) {
+
+    // Check UA for known TV/set-top-box strings
+    const isTVUserAgent = userAgent.includes("googletv") ||
+                          userAgent.includes("android tv") ||
+                          userAgent.includes("smart-tv") ||
+                          userAgent.includes("hbbtv") ||
+                          userAgent.includes("crkey") ||
+                          userAgent.includes("firetv") ||
+                          userAgent.includes("aftb") ||
+                          userAgent.includes("aftt");
+
+    // Physical pixel width — accounts for devicePixelRatio so a 1080p TV
+    // at any DPI always reports >= 1280 physical pixels
+    const physicalWidth = window.innerWidth * (window.devicePixelRatio || 1);
+
+    // No touch points = TV remote or desktop (not a touchscreen phone)
+    const hasNoTouch = navigator.maxTouchPoints === 0;
+
+    // Force TV mode via URL param ?tv=1 for testing
+    const forceTv = new URLSearchParams(window.location.search).get("tv") === "1";
+
+    if (forceTv || isTVUserAgent || physicalWidth >= 1280 || hasNoTouch) {
         enableTvMode();
     } else {
         enableMobileMode();
     }
 
-    window.addEventListener("resize", () => {
-        if (window.innerWidth < 768) {
-            enableMobileMode();
-        } else {
-            enableTvMode();
-        }
-    });
+    // Only allow resize-based switching on mobile/tablet (not TV)
+    if (!isTvMode) {
+        window.addEventListener("resize", () => {
+            const pw = window.innerWidth * (window.devicePixelRatio || 1);
+            if (pw >= 1280 || navigator.maxTouchPoints === 0) {
+                enableTvMode();
+            } else if (window.innerWidth < 768) {
+                enableMobileMode();
+            }
+        });
+    }
 }
 
 function enableTvMode() {
@@ -101,35 +120,41 @@ async function loadMovies(page, resetGrid = false) {
         const json = await res.json();
 
         if (json.status === "success" && json.data) {
-            let movies = json.data;
+            const rawMovies = json.data;
+            const rawCount = rawMovies.length;
 
-            // Fallback client side genre filter refinement if backend search was used
-            if (currentSearchQuery && activeGenre && activeGenre !== "ALL") {
-                movies = movies.filter(m => (m.genres || '').toLowerCase().includes(activeGenre.toLowerCase()));
+            // Always apply client-side genre filter (works regardless of whether
+            // the backend supports genre filtering)
+            let movies = rawMovies;
+            if (activeGenre && activeGenre !== "ALL") {
+                movies = rawMovies.filter(m => (m.genres || '').toLowerCase().includes(activeGenre.toLowerCase()));
             }
 
             if (json.total) totalMoviesCount = json.total;
 
-            if (movies.length === 0) {
-                if (resetGrid) {
-                    document.getElementById("mainMovieGrid").innerHTML = `<p style="color:#A3A3A3; padding: 30px; grid-column: 1/-1; text-align: center;">No movies found.</p>`;
-                }
+            if (movies.length === 0 && resetGrid) {
+                document.getElementById("mainMovieGrid").innerHTML = `<p style="color:#A3A3A3; padding: 30px; grid-column: 1/-1; text-align: center;">No movies found.</p>`;
                 hasMore = false;
-            } else {
+            } else if (movies.length > 0) {
                 if (resetGrid) {
                     setupHeroCarousel(movies);
                 }
                 appendMoviesToGrid(movies);
 
-                // If searching, search API returns all results at once
+                // Use raw API page count (not filtered count) to determine if more pages exist
                 if (currentSearchQuery) {
-                    hasMore = false;
+                    hasMore = false; // search returns all at once
+                } else if (rawCount < PAGE_LIMIT) {
+                    hasMore = false; // last page from DB
                 } else {
-                    if (movies.length < PAGE_LIMIT) {
-                        hasMore = false;
-                    } else {
-                        currentPage++;
-                    }
+                    currentPage++;
+                }
+            } else {
+                // filtered to 0 but more DB pages may exist — keep paginating
+                if (rawCount >= PAGE_LIMIT) {
+                    currentPage++;
+                } else {
+                    hasMore = false;
                 }
             }
 
@@ -446,12 +471,25 @@ function navigateDpad(direction) {
         return;
     }
 
+    const navbar = document.querySelector('.navbar');
+    const isTv = document.body.classList.contains('tv-mode');
+
+    // In TV mode, determine if current focus is already inside the sidebar
+    const currentInSidebar = isTv && navbar && navbar.contains(currentEl);
+
     const currentRect = currentEl.getBoundingClientRect();
     let bestNextEl = null;
     let minDistance = Infinity;
 
     focusableElements.forEach(el => {
         if (el === currentEl) return;
+
+        // In TV mode, sidebar nav items should NEVER be reachable via UP/DOWN/RIGHT.
+        // They are only reachable via LEFT when there's no other left-side candidate.
+        if (isTv && navbar && navbar.contains(el) && !currentInSidebar) {
+            return; // Skip sidebar items in spatial search from non-sidebar focus
+        }
+
         const rect = el.getBoundingClientRect();
 
         let isCandidate = false;
@@ -471,6 +509,16 @@ function navigateDpad(direction) {
             }
         }
     });
+
+    // In TV mode: if pressing LEFT and no candidate found (we're at leftmost),
+    // open the sidebar by focusing its first focusable item.
+    if (isTv && direction === "LEFT" && !bestNextEl && !currentInSidebar && navbar) {
+        const firstNavItem = navbar.querySelector('[tabindex], .genre-item, .nav-item, .search-icon');
+        if (firstNavItem) {
+            firstNavItem.focus();
+        }
+        return;
+    }
 
     if (bestNextEl) {
         bestNextEl.focus();
