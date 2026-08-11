@@ -330,6 +330,28 @@ function showPlayerHeaderTemporarily() {
     }, 4000);
 }
 
+function seekPlayerStream(seconds) {
+    const iframe = document.getElementById("videoIframe");
+    if (!iframe || !iframe.contentWindow) return;
+
+    try {
+        // Send postMessage to embed iframe for HTML5 / VideoNode seek control
+        iframe.contentWindow.postMessage(JSON.stringify({
+            event: "command",
+            func: seconds > 0 ? "fastForward" : "rewind",
+            args: [Math.abs(seconds)]
+        }), "*");
+
+        // Standard HTML5 video postMessage fallback command
+        iframe.contentWindow.postMessage({
+            type: "seek",
+            offset: seconds
+        }, "*");
+    } catch (e) {
+        console.warn("Player seek postMessage dispatch error:", e);
+    }
+}
+
 function openPlayerModal(movie) {
     const modal = document.getElementById("playerModal");
     const iframe = document.getElementById("videoIframe");
@@ -506,8 +528,39 @@ function setupEventListeners() {
         }, 400);
     });
 
-    // Keyboard Event Listener for Android TV Remote Keys
+    // Keyboard Event Listener for Android TV Remote Keys & Player Controls
     document.addEventListener("keydown", (e) => {
+        const playerModal = document.getElementById("playerModal");
+        const isPlayerOpen = playerModal && !playerModal.classList.contains("hidden");
+
+        // Handle Android TV Player Remote Controls when video player is open
+        if (isPlayerOpen) {
+            const key = e.key;
+
+            // Re-appear title & close button overlay on any D-Pad key press inside player
+            showPlayerHeaderTemporarily();
+
+            if (key === "ArrowRight" || e.keyCode === 39) {
+                e.preventDefault();
+                seekPlayerStream(10); // Fast forward +10 sec
+                return;
+            } else if (key === "ArrowLeft" || e.keyCode === 37) {
+                e.preventDefault();
+                seekPlayerStream(-10); // Rewind -10 sec
+                return;
+            } else if (key === "ArrowUp" || e.keyCode === 38) {
+                e.preventDefault();
+                // Up key does nothing in player
+                return;
+            } else if (key === "ArrowDown" || e.keyCode === 40) {
+                e.preventDefault();
+                // Move selection to header close button / controls overlay
+                const closeBtn = document.getElementById("closePlayerBtn");
+                if (closeBtn) closeBtn.focus();
+                return;
+            }
+        }
+
         const key = e.key;
 
         if (key === "ArrowUp" || e.keyCode === 38) {
