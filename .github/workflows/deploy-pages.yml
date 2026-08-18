@@ -1,0 +1,33 @@
+name: Deploy Web App to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'index.html'
+      - 'style.css'
+      - 'app.js'
+      - 'manifest.json'
+      - 'hls.min.js'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
