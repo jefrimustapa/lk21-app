@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "test": "vitest run",
     "build": "node -e \"const fs=require('fs'); ['index.html','style.css','app.js','manifest.json'].forEach(f => fs.copyFileSync(f, 'dist/'+f));\"",
     "sync": "npm run build && npx cap copy android"
   },
@@ -8,5 +9,9 @@
     "@capacitor/app": "^8.1.1",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/core": "^8.5.0"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1",
+    "vitest": "^4.1.10"
   }
 }

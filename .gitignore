@@ -16,3 +16,13 @@ android/.gradle/
 android/app/build/
 android/build/
 android/licenses/
+*.jks
+/*.png
+/*.jpg
+find_*.js
+init_playcdn.js
+inspect_*.js
+resolve_stream.js
+test_*.py
+test_scrape.js
+generate_*.ps1

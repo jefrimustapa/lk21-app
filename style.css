@@ -56,19 +56,21 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    height: 68px;
+    height: var(--header-height);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 4%;
     z-index: 1000;
-    background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+    background: rgba(15, 15, 15, 0.25);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     transition: background-color var(--transition-fast);
 }
 
 .navbar.scrolled {
-    background-color: var(--bg-primary);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    background: rgba(15, 15, 15, 0.35);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .nav-left {
@@ -84,19 +86,45 @@ body {
 }
 
 .brand {
-    cursor: pointer;
-    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    user-select: none;
+    pointer-events: none;
 }
 
-.brand-text {
-    font-size: 1.8rem;
-    font-weight: 800;
-    letter-spacing: 1.5px;
+.brand-square-badge {
+    width: 44px;
+    height: 44px;
+    background: #161616;
+    border: 1.5px solid rgba(229, 9, 20, 0.4);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    line-height: 1;
+    user-select: none;
+    pointer-events: none;
+}
+
+.brand-lk {
+    font-size: 1.1rem;
+    font-weight: 900;
     color: var(--netflix-red);
+    letter-spacing: 0.5px;
+    line-height: 1;
+    margin-bottom: 1px;
 }
 
-.brand-text .highlight {
+.brand-flix {
+    font-size: 0.75rem;
+    font-weight: 800;
     color: #FFFFFF;
+    letter-spacing: 0.2px;
+    line-height: 1;
 }
 
 .genre-nav-bar {
@@ -140,66 +168,83 @@ body {
 /* ==========================================================================
    Android TV Vertical Collapsible Sidebar (HBO Max / Netflix TV Style)
    ========================================================================== */
+html.tv-mode .navbar,
 body.tv-mode .navbar {
     position: fixed;
     top: 0;
     left: 0;
-    width: 68px;
+    width: 90px;
     height: 100vh;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch !important;
     justify-content: flex-start;
-    padding: 24px 12px;
+    padding: 15px 15px 24px 15px; /* padding-top 15px, left/right 15px */
     z-index: 2000;
-    background: linear-gradient(90deg, rgba(15, 15, 15, 0.98) 0%, rgba(15, 15, 15, 0.9) 100%);
+    background: rgba(15, 15, 15, 0.25);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-right: 1px solid rgba(255, 255, 255, 0.08);
-    transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.3s ease;
+    transition: width 0.28s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.28s ease, box-shadow 0.28s ease;
     overflow: hidden;
+    box-sizing: border-box;
 }
 
-/* Expand sidebar when TV remote focuses inside or user hovers */
+/* Expand sidebar ONLY when focused within navbar or explicitly expanded */
+html.tv-mode .navbar:focus-within,
 body.tv-mode .navbar:focus-within,
-body.tv-mode .navbar:hover {
-    width: 250px;
-    background: rgba(12, 12, 12, 0.98);
+html.tv-mode .navbar.sidebar-expanded,
+body.tv-mode .navbar.sidebar-expanded {
+    width: 250px !important;
+    background: rgba(12, 12, 12, 0.60) !important;
     box-shadow: 10px 0 40px rgba(0, 0, 0, 0.95);
 }
 
+html.tv-mode .nav-left,
 body.tv-mode .nav-left {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 30px;
-    max-width: 100%;
-    width: 100%;
+    align-items: stretch !important;
+    gap: 15px; /* Reduced vertical gap to 15px */
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
 }
 
+html.tv-mode .brand,
 body.tv-mode .brand {
     display: flex;
     align-items: center;
     height: 40px;
-    padding-left: 6px;
+    padding-left: 2px;
     white-space: nowrap;
 }
 
+html.tv-mode .brand-text,
 body.tv-mode .brand-text {
     font-size: 1.6rem;
     font-weight: 800;
 }
 
+html.tv-mode .genre-nav-bar,
 body.tv-mode .genre-nav-bar {
+    display: flex !important;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch !important;
     gap: 12px;
-    width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 10px 0;
+    padding: 10px 0 0 0; /* padding-top 10px */
+    margin: 0;
 }
 
+html.tv-mode .genre-item,
 body.tv-mode .genre-item {
-    width: 100%;
+    width: calc(100% - 14px) !important; /* Left offset 7px + right inset 7px = total stretch minus 14px */
+    margin-left: 7px; /* Offset +7px on left */
+    margin-right: 7px; /* 7px inset on right */
+    box-sizing: border-box;
     padding: 10px 14px;
     border-radius: 8px;
     background: transparent;
@@ -207,61 +252,81 @@ body.tv-mode .genre-item {
     font-size: 0.95rem;
     white-space: nowrap;
     justify-content: flex-start;
+    display: flex;
+    align-items: center;
 }
 
+html.tv-mode .genre-item i,
 body.tv-mode .genre-item i {
     font-size: 1.2rem;
     min-width: 24px;
     text-align: center;
 }
 
+html.tv-mode .genre-item span,
 body.tv-mode .genre-item span {
     opacity: 0;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.2s ease;
 }
 
+html.tv-mode .navbar:focus-within .genre-item span,
 body.tv-mode .navbar:focus-within .genre-item span,
-body.tv-mode .navbar:hover .genre-item span {
+html.tv-mode .navbar.sidebar-expanded .genre-item span,
+body.tv-mode .navbar.sidebar-expanded .genre-item span {
     opacity: 1;
 }
 
+html.tv-mode .nav-right,
 body.tv-mode .nav-right {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch !important;
     gap: 20px;
     margin-top: auto;
-    width: 100%;
-    padding-left: 4px;
+    width: 100% !important;
+    padding-left: 2px;
 }
 
+html.tv-mode .search-box,
 body.tv-mode .search-box {
-    width: 100%;
-    padding: 8px 10px;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    padding: 10px 14px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
 }
 
+html.tv-mode .search-icon,
 body.tv-mode .search-icon {
     font-size: 1.1rem;
     margin-right: 8px;
 }
 
+html.tv-mode #searchInput,
 body.tv-mode #searchInput {
     width: 0;
     opacity: 0;
-    transition: width 0.3s ease, opacity 0.25s ease;
+    transition: width 0.25s ease, opacity 0.2s ease;
 }
 
+html.tv-mode .navbar:focus-within #searchInput,
 body.tv-mode .navbar:focus-within #searchInput,
-body.tv-mode .navbar:hover #searchInput {
-    width: 140px;
+html.tv-mode .navbar.sidebar-expanded #searchInput,
+body.tv-mode .navbar.sidebar-expanded #searchInput {
+    width: 100%;
+    flex: 1;
     opacity: 1;
 }
 
+html.tv-mode .device-badge,
 body.tv-mode .device-badge {
-    opacity: 0;
-    transition: opacity 0.25s ease;
+    opacity: 0.9;
+    display: flex;
     white-space: nowrap;
+    font-size: 0.75rem;
+    padding: 4px 8px;
 }
 
 body.tv-mode .navbar:focus-within .device-badge,
@@ -269,13 +334,15 @@ body.tv-mode .navbar:hover .device-badge {
     opacity: 1;
 }
 
+html.tv-mode .mobile-genre-bar,
 body.tv-mode .mobile-genre-bar {
-    display: none;
+    display: none !important;
 }
 
+html.tv-mode .main-content,
 body.tv-mode .main-content {
-    margin-left: 68px;
-    padding-top: 0;
+    margin-left: 90px !important;
+    padding-top: 0 !important;
 }
 
 .genre-pill {
@@ -330,19 +397,45 @@ body.tv-mode .main-content {
     box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);
 }
 
+.catalog-top-header {
+    padding: 14px 4% 6px;
+    position: relative;
+    z-index: 15;
+}
+
+body.tv-mode .catalog-top-header {
+    padding: 18px 5% 6px;
+}
+
 .section-header-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 10px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    padding-bottom: 8px;
+}
+
+.section-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #E5E5E5;
+}
+
+.section-title i {
+    color: var(--netflix-red);
+    font-size: 1rem;
 }
 
 .results-count {
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     color: var(--text-muted);
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .infinite-loader {
@@ -375,15 +468,24 @@ body.tv-mode .main-content {
     outline: none !important;
 }
 
+html.tv-mode .nav-item:focus,
 body.tv-mode .nav-item:focus,
+html.tv-mode .btn:focus,
 body.tv-mode .btn:focus,
+html.tv-mode .movie-card:focus,
 body.tv-mode .movie-card:focus,
+html.tv-mode .search-icon:focus,
 body.tv-mode .search-icon:focus,
-body.tv-mode #searchInput:focus,
+html.tv-mode .btn-close-player:focus,
 body.tv-mode .btn-close-player:focus,
+html.tv-mode .btn-back-player:focus,
+body.tv-mode .btn-back-player:focus,
+html.tv-mode .btn-back-detail:focus,
+body.tv-mode .btn-back-detail:focus,
+html.tv-mode .btn-close-detail:focus,
 body.tv-mode .btn-close-detail:focus {
     transform: scale(1.04);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7), 0 6px 18px rgba(229, 9, 20, 0.3) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 6px 18px rgba(229, 9, 20, 0.5) !important;
     z-index: 100 !important;
     border-radius: 6px;
 }
@@ -443,26 +545,29 @@ body.tv-mode .btn-close-detail:focus {
    ========================================================================== */
 .hero-billboard {
     position: relative;
-    height: 80vh;
-    min-height: 520px;
+    height: 75vh;
+    min-height: 480px;
     width: 100%;
     background-size: cover;
     background-position: center top;
     display: flex;
     align-items: center;
     padding: 0 4%;
-    margin-bottom: -60px;
+    margin-bottom: 0px;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
     transition: background-image 0.8s ease-in-out;
 }
 
 body.tv-mode .hero-billboard {
-    height: 85vh;
-    min-height: 550px;
+    height: 65vh;
+    min-height: 440px;
     padding-left: 5%;
+    margin-bottom: 0px;
 }
 
 body.tv-mode .hero-content {
-    margin-top: 40px;
+    margin-top: 20px;
 }
 
 .hero-indicators {
@@ -757,14 +862,11 @@ body.tv-mode .hero-content {
    ========================================================================== */
 .player-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
     background-color: #000;
-    z-index: 9999;
+    z-index: 10001;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -775,52 +877,144 @@ body.tv-mode .hero-content {
     top: 0;
     left: 0;
     width: 100%;
-    height: 65px;
+    height: 75px;
     display: flex;
     align-items: center;
-    padding: 0 20px;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
-    gap: 15px;
-    z-index: 10;
+    justify-content: space-between;
+    padding: 0 28px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.5) 60%, rgba(0, 0, 0, 0) 100%);
+    z-index: 20;
     opacity: 1;
+    pointer-events: none; /* Crucial: do not trap focus or clicks across the full screen header */
     transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.player-header * {
+    pointer-events: auto; /* Allow buttons to be clickable */
 }
 
 .player-header.fade-out {
     opacity: 0;
     pointer-events: none;
-    transform: translateY(-10px);
+    transform: translateY(-12px);
 }
 
-.btn-close-player, .btn-close-detail {
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(4px);
-    border: none;
+.player-seek-hud {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(15, 15, 15, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
     color: #FFF;
-    padding: 8px 16px;
-    border-radius: 20px;
+    padding: 16px 28px;
+    border-radius: 16px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 30;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.btn-back-player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #FFF;
+    padding: 8px 18px;
+    border-radius: 24px;
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
     outline: none;
-    transition: background 0.2s ease;
+    transition: background 0.2s ease, transform 0.15s ease;
 }
 
-.btn-close-player:hover {
+.btn-back-player:hover, .btn-back-player:focus {
     background: var(--netflix-red);
 }
 
+.player-meta-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    margin-left: 20px;
+}
+
 .player-title {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #FFF;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+    max-width: 50vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-badges {
+    display: flex;
+    gap: 6px;
+}
+
+.player-remote-hints {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(0, 0, 0, 0.4);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.player-remote-hints span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Center Screen Seek HUD Toast */
+.player-seek-hud {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(15, 15, 15, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    color: #FFF;
+    padding: 16px 28px;
+    border-radius: 16px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 30;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.player-seek-hud i {
+    color: var(--netflix-red);
+    font-size: 1.5rem;
 }
 
 .player-container {
     position: absolute;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100vw;
     height: 100vh;
     display: flex;
@@ -837,126 +1031,434 @@ body.tv-mode .hero-content {
     background: #000;
 }
 
-/* Details Modal */
+/* ================================================================
+   Detail Full-Page View (replaces modal)
+   ================================================================ */
 .detail-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     width: 100%;
-    height: 100%;
     height: 100dvh;
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 12px;
-    background: rgba(0, 0, 0, 0.88);
-    backdrop-filter: blur(10px);
+    z-index: 10000;
+    background: var(--bg-primary);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.detail-card {
+/* When open: slide in from right */
+.detail-modal.detail-open {
+    transform: translateX(0);
+}
+
+.detail-modal::-webkit-scrollbar { display: none; }
+
+/* Cinematic full-width backdrop at top */
+.detail-backdrop {
     position: relative;
     width: 100%;
-    max-width: 850px;
-    height: calc(100dvh - 24px);
-    max-height: 94vh;
-    background-color: var(--bg-card);
-    border-radius: 16px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
-}
-
-.btn-close-detail {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    z-index: 50;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.7);
-}
-
-.detail-banner {
-    position: relative;
-    height: 240px;
-    min-height: 180px;
-    flex-shrink: 0;
+    height: 55vw;
+    max-height: 520px;
+    min-height: 260px;
     background-size: cover;
-    background-position: center;
-    display: flex;
-    align-items: flex-end;
-    padding: 25px;
+    background-position: center top;
+    flex-shrink: 0;
 }
 
-.detail-banner-overlay {
+.detail-backdrop-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(0,0,0,0) 30%, var(--bg-card) 100%);
+    background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.15) 0%,
+        rgba(20,20,20,0.6) 60%,
+        var(--bg-primary) 100%
+    );
 }
 
-.detail-quick-info {
+/* Back button top-left */
+.btn-back-detail {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 30px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.btn-back-detail:hover {
+    background: rgba(255,255,255,0.15);
+    transform: translateX(-3px);
+}
+
+/* Content area below backdrop */
+.detail-page-content {
+    position: relative;
+    display: flex;
+    gap: 28px;
+    padding: 0 28px 50px;
+    margin-top: -80px; /* overlap backdrop */
+    align-items: flex-start;
+}
+
+/* Poster card floating on left */
+.detail-poster {
+    flex-shrink: 0;
+    width: 200px; /* 200px width for movie detail poster */
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+    position: relative;
+    z-index: 2;
+    aspect-ratio: 2/3;
+    background: var(--bg-card);
+    border: 2px solid transparent;
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
+}
+
+.detail-poster:focus {
+    transform: scale(1.03);
+    border-color: var(--netflix-red);
+    box-shadow: 0 12px 35px rgba(229, 9, 20, 0.45);
+    outline: none;
+}
+
+.detail-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Right side info */
+.detail-info {
+    flex: 1;
+    min-width: 0;
+    padding-top: 70px;
     position: relative;
     z-index: 2;
 }
 
 .detail-title {
-    font-size: 1.8rem;
+    font-size: clamp(1.4rem, 4vw, 2.4rem);
     font-weight: 800;
-    margin-bottom: 8px;
+    margin: 0 0 10px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
 }
 
-.detail-body {
-    padding: 25px;
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 25px;
-    overflow-y: auto;
-    max-height: calc(100vh - 280px);
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-}
-
-.detail-body::-webkit-scrollbar {
-    display: none; /* Chrome/Safari/Blink */
+.detail-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
 }
 
 .detail-synopsis {
-    font-size: 0.95rem;
-    line-height: 1.6;
-    color: #D4D4D4;
-    margin-bottom: 20px;
-    max-height: 180px;
-    overflow-y: auto;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
+    font-size: 0.93rem;
+    line-height: 1.65;
+    color: #C8C8C8;
+    margin-bottom: 22px;
 }
 
-.detail-synopsis::-webkit-scrollbar {
-    display: none; /* Chrome/Safari/Blink */
+.detail-meta-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 28px;
 }
 
 .detail-info-group {
-    margin-bottom: 12px;
+    display: flex;
+    gap: 8px;
     font-size: 0.85rem;
+    align-items: baseline;
 }
 
 .info-label {
     color: var(--text-dim);
-    margin-right: 6px;
+    flex-shrink: 0;
+    min-width: 52px;
 }
 
 .info-val {
     color: #FFFFFF;
     font-weight: 500;
+    line-height: 1.4;
+}
+
+.detail-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* ================================================================
+   You May Also Like — Horizontal Scrollable Section
+   ================================================================ */
+.detail-related-section {
+    position: relative;
+    z-index: 2;
+    padding: 10px 28px 60px;
+    width: 100%;
+}
+
+.related-section-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #FFF;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.01em;
+}
+
+.related-section-title i {
+    color: var(--netflix-red);
+    font-size: 1.05rem;
+}
+
+.related-movies-scroll {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 8px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Hide scrollbar Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar IE/Edge */
+}
+
+.related-movies-scroll::-webkit-scrollbar {
+    display: none; /* Hide scrollbar Chrome/Safari/WebView */
+}
+
+.related-movie-card {
+    flex: 0 0 130px;
+    width: 130px;
+    aspect-ratio: 2 / 3;
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-card);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.related-movie-card:hover,
+.related-movie-card:focus {
+    transform: scale(1.06);
+    box-shadow: 0 12px 28px rgba(229, 9, 20, 0.4);
+    border-color: var(--netflix-red);
+    outline: none;
+    z-index: 10;
+}
+
+.related-movie-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.related-movie-card .related-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.4) 40%, transparent 80%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 8px;
+}
+
+.related-movie-card .related-title {
+    color: #FFF;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.related-movie-card .related-rating {
+    font-size: 0.68rem;
+    color: #FFC107;
+    font-weight: 600;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+
+
+/* TV mode tweaks — 100vh single-screen fit without up/down scrolling */
+html.tv-mode .detail-modal,
+body.tv-mode .detail-modal {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    background: #000;
+}
+
+html.tv-mode .detail-backdrop,
+body.tv-mode .detail-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    max-height: none;
+    min-height: none;
+    background-size: cover;
+    background-position: center 20%;
+    z-index: 1;
+}
+
+html.tv-mode .detail-backdrop-overlay,
+body.tv-mode .detail-backdrop-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to right,
+        rgba(10, 10, 10, 0.98) 0%,
+        rgba(10, 10, 10, 0.92) 42%,
+        rgba(10, 10, 10, 0.6) 75%,
+        rgba(10, 10, 10, 0.3) 100%
+    ), linear-gradient(
+        to top,
+        rgba(10, 10, 10, 0.98) 0%,
+        rgba(10, 10, 10, 0.4) 40%,
+        rgba(10, 10, 10, 0.8) 100%
+    );
+    z-index: 2;
+}
+
+html.tv-mode .btn-back-detail,
+body.tv-mode .btn-back-detail {
+    position: absolute;
+    top: 24px;
+    left: 36px;
+    z-index: 10;
+    font-size: 0.95rem;
+    padding: 8px 18px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+html.tv-mode .detail-page-content,
+body.tv-mode .detail-page-content {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 40px;
+    padding: 0 48px 36px 48px;
+    margin-top: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: calc(100vh - 70px);
+    box-sizing: border-box;
+}
+
+html.tv-mode .detail-poster,
+body.tv-mode .detail-poster {
+    width: 190px;
+    max-height: 285px;
+    aspect-ratio: 2/3;
+    flex-shrink: 0;
+    border-radius: 12px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+html.tv-mode .detail-info,
+body.tv-mode .detail-info {
+    flex: 1;
+    max-width: 680px;
+    padding-top: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+html.tv-mode .detail-title,
+body.tv-mode .detail-title {
+    font-size: 2.1rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    line-height: 1.15;
+    color: #FFF;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+html.tv-mode .detail-tags,
+body.tv-mode .detail-tags {
+    margin-bottom: 10px;
+    gap: 6px;
+}
+
+html.tv-mode .detail-synopsis,
+body.tv-mode .detail-synopsis {
+    font-size: 0.88rem;
+    line-height: 1.45;
+    margin-bottom: 12px;
+    color: #D1D1D1;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+html.tv-mode .detail-meta-grid,
+body.tv-mode .detail-meta-grid {
+    margin-bottom: 16px;
+    gap: 4px;
+}
+
+html.tv-mode .detail-info-group,
+body.tv-mode .detail-info-group {
+    font-size: 0.8rem;
+}
+
+html.tv-mode .detail-actions,
+body.tv-mode .detail-actions {
+    margin-top: 4px;
+}
+
+html.tv-mode .detail-actions .btn,
+body.tv-mode .detail-actions .btn {
+    padding: 10px 24px;
+    font-size: 0.95rem;
+    border-radius: 8px;
 }
 
 /* ==========================================================================
@@ -1038,7 +1540,8 @@ body.tv-mode .hero-content {
 @media (max-width: 768px) {
     .navbar {
         height: 56px;
-        padding: 0 12px;
+        padding: 0 10px;
+        gap: 8px;
     }
 
     .genre-nav-bar {
@@ -1055,54 +1558,86 @@ body.tv-mode .hero-content {
     }
 
     .nav-left {
-        max-width: 50%;
+        max-width: 100%;
+        flex: 1;
+        gap: 10px;
     }
 
-    .genre-nav-bar {
-        gap: 6px;
+    .nav-right {
+        gap: 8px;
     }
 
-    .genre-item {
-        padding: 4px 10px;
-        font-size: 0.75rem;
+    .device-badge {
+        display: flex;
+        padding: 3px 8px;
+        font-size: 0.7rem;
     }
 
-    .brand-text {
-        font-size: 1.3rem;
+    .search-box {
+        flex: 1;
+        min-width: 0;
+        max-width: 100%;
+        padding: 5px 8px;
     }
 
     #searchInput {
-        width: 110px;
+        width: 100%;
+        min-width: 0;
+        flex: 1;
+        font-size: 0.8rem;
+    }
+
+    .brand-text {
+        font-size: 1.2rem;
+    }
+
+    .catalog-top-header {
+        padding: 10px 12px 4px;
+    }
+
+    .section-title {
+        font-size: 0.95rem;
+    }
+
+    .results-count {
+        font-size: 0.75rem;
     }
 
     .hero-billboard {
-        height: 60vh;
-        min-height: 400px;
-        padding: 0 15px;
+        height: 52vh;
+        min-height: 350px;
+        padding: 0 12px;
+        margin-bottom: 0px;
+        border-radius: 8px 8px 0 0;
     }
 
     .hero-title {
-        font-size: 2rem;
+        font-size: 1.7rem;
     }
 
     .hero-synopsis {
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         -webkit-line-clamp: 2;
     }
 
     .btn {
-        padding: 10px 18px;
-        font-size: 0.85rem;
+        padding: 8px 14px;
+        font-size: 0.8rem;
+    }
+
+    .catalog-section {
+        padding: 0 12px 20px;
     }
 
     .movie-card {
-        flex: 0 0 130px;
-        height: 195px;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 2 / 3; /* Standard movie poster aspect ratio (e.g. 200x300 / 2:3) */
     }
 
     .movie-grid {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
     }
 
     .detail-body {
@@ -1110,7 +1645,109 @@ body.tv-mode .hero-content {
         gap: 15px;
     }
 
+    .detail-page-content {
+        flex-direction: column;
+        align-items: center;
+        margin-top: -80px;
+        padding: 0 16px 40px;
+    }
+
+    .detail-poster {
+        width: 200px;
+        margin: 0 auto;
+    }
+
+    .detail-info {
+        padding-top: 20px;
+        text-align: center;
+        width: 100%;
+    }
+
+    .detail-tags {
+        justify-content: center;
+    }
+
+    .detail-actions {
+        justify-content: center;
+        display: flex;
+    }
+
     .dpad-controller {
         display: none; /* Hide TV simulator on mobile touch devices */
+    }
+}
+
+/* ==========================================================================
+   Mobile / Touch Devices Landscape Layout Optimization
+   ========================================================================== */
+@media (orientation: landscape) and (max-height: 550px) {
+    .movie-grid {
+        grid-template-columns: repeat(4, 1fr) !important; /* 4 columns on x-axis in landscape */
+        gap: 12px;
+    }
+
+    .movie-card {
+        width: 100%;
+        aspect-ratio: 2 / 3;
+    }
+
+    .detail-backdrop {
+        height: 35vh;
+        min-height: 140px;
+        max-height: 220px;
+    }
+
+    .detail-page-content {
+        flex-direction: row !important; /* Force side-by-side layout in landscape */
+        align-items: flex-start !important;
+        margin-top: -40px !important;
+        padding: 0 24px 30px !important;
+        gap: 24px !important;
+    }
+
+    .detail-poster {
+        width: 200px !important; /* 200px poster width */
+        margin: 0 !important;
+    }
+
+    .detail-info {
+        flex: 1 !important;
+        min-width: 0 !important;
+        padding-top: 20px !important;
+        text-align: left !important;
+        width: auto !important;
+    }
+
+    .detail-title {
+        font-size: 1.4rem;
+        margin-bottom: 6px;
+        text-align: left !important;
+    }
+
+    .detail-synopsis {
+        font-size: 0.85rem;
+        line-height: 1.4;
+        margin-bottom: 12px;
+        text-align: left !important;
+    }
+
+    .detail-tags {
+        justify-content: flex-start !important;
+        margin-bottom: 10px;
+        gap: 6px;
+    }
+
+    .detail-meta-grid {
+        text-align: left !important;
+    }
+
+    .detail-actions {
+        justify-content: flex-start !important;
+        display: flex;
+    }
+
+    .detail-actions .btn {
+        padding: 8px 18px;
+        font-size: 0.85rem;
     }
 }
