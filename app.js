@@ -522,6 +522,56 @@ function showStreamToast(message, duration = 3000) {
     }, duration);
 }
 
+function getServerDisplayName(url, index) {
+    if (!url) return `Server ${index + 1}`;
+    if (url.includes("turbovidhls") || url.includes("emturbovid") || url.includes("turbovip")) return `Server ${index + 1}: Turbo`;
+    if (url.includes("gn1r5n") || url.includes("filelions") || url.includes("cast")) return `Server ${index + 1}: HD Cast`;
+    if (url.includes("abyssplayer") || url.includes("hydrax")) return `Server ${index + 1}: Hydrax`;
+    if (url.includes(".m3u8")) return `Server ${index + 1}: HLS`;
+    if (url.includes("playcdn")) return `Server ${index + 1}: PlayCDN`;
+    if (url.includes("videonode")) return `Server ${index + 1}: VIP`;
+    return `Server ${index + 1}`;
+}
+
+function updatePlayerServerUI() {
+    const container = document.getElementById("playerServerSelector");
+    const switchBtn = document.getElementById("switchServerBtn");
+    
+    if (switchBtn) {
+        switchBtn.onclick = () => {
+            if (activeServerList.length <= 1) {
+                showStreamToast("No alternative server available");
+                return;
+            }
+            activeServerIndex = (activeServerIndex + 1) % activeServerList.length;
+            playCurrentServerStream();
+        };
+    }
+
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (!activeServerList || activeServerList.length <= 1) {
+        container.style.display = "none";
+        return;
+    }
+
+    container.style.display = "flex";
+    activeServerList.forEach((serverUrl, idx) => {
+        const btn = document.createElement("button");
+        btn.className = `server-pill ${idx === activeServerIndex ? "active" : ""}`;
+        btn.innerHTML = `<i class="fa-solid fa-server"></i> ${getServerDisplayName(serverUrl, idx)}`;
+        btn.tabIndex = 0;
+        btn.onclick = () => {
+            if (activeServerIndex !== idx) {
+                activeServerIndex = idx;
+                playCurrentServerStream();
+            }
+        };
+        container.appendChild(btn);
+    });
+}
+
 function playCurrentServerStream() {
     if (!activeServerList || activeServerList.length === 0) {
         showStreamToast("No stream sources available.");
@@ -533,16 +583,18 @@ function playCurrentServerStream() {
         return;
     }
 
+    updatePlayerServerUI();
+
     let playUrl = activeServerList[activeServerIndex];
     const serverNum = activeServerIndex + 1;
     const totalServers = activeServerList.length;
-    console.log(`[StreamEngine] Playing server ${serverNum}/${totalServers}: ${playUrl}`);
+    console.log(`[StreamEngine] Playing server ${serverNum}/${totalServers} (${getServerDisplayName(playUrl, activeServerIndex)}): ${playUrl}`);
 
     if (activeServerIndex > 0) {
-        showStreamToast(`Connecting to Server ${serverNum}/${totalServers}...`, 2500);
+        showStreamToast(`Connecting to ${getServerDisplayName(playUrl, activeServerIndex)} (${serverNum}/${totalServers})...`, 2500);
     }
 
-    // Un-wrap direct player host if it points to videonode
+    // Un-wrap direct player host if it points to videonode in AndroidBridge
     if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.resolveDirectStream === "function") {
         try {
             const resolved = window.AndroidBridge.resolveDirectStream(playUrl);
@@ -551,11 +603,6 @@ function playCurrentServerStream() {
             }
         } catch (e) {
             console.warn("Direct stream resolution error:", e);
-        }
-    } else if (playUrl.includes("videonode.de/iframe/p2p/")) {
-        const p2pMatch = playUrl.match(/videonode\.de\/iframe\/p2p\/([a-zA-Z0-9_-]+)/);
-        if (p2pMatch && p2pMatch[1]) {
-            playUrl = `https://playcdn.de/video.php?id=${p2pMatch[1]}`;
         }
     }
 
@@ -631,9 +678,10 @@ function playCurrentServerStream() {
                 embedUrl += (embedUrl.includes("?") ? "&" : "?") + "autoplay=1&autostart=true";
             }
             
-            // On web browsers (outside native Android webview bridge), route through embed proxy to bypass frame-ancestors CSP restrictions
+            // On web browsers (outside native Android webview bridge), route through embed proxy only for hosts with strict CSP (videonode, playcdn)
             if (typeof window.AndroidBridge === "undefined") {
-                if (!embedUrl.includes("/api/embed?url=")) {
+                const isCspBlockedHost = embedUrl.includes("videonode.de") || embedUrl.includes("playcdn.de");
+                if (isCspBlockedHost && !embedUrl.includes("/api/embed?url=")) {
                     embedUrl = `${API_BASE}/api/embed?url=${encodeURIComponent(embedUrl)}`;
                 }
             }
@@ -661,12 +709,12 @@ function tryNextServerFallback() {
     if (activeServerIndex < activeServerList.length - 1) {
         activeServerIndex++;
         const nextNum = activeServerIndex + 1;
-        showStreamToast(`Server ${activeServerIndex} failed. Switching to Server ${nextNum}...`, 2500);
+        showStreamToast(`Switching to Server ${nextNum}: ${getServerDisplayName(activeServerList[activeServerIndex], activeServerIndex)}...`, 2500);
         setTimeout(() => {
             playCurrentServerStream();
-        }, 500);
+        }, 300);
     } else {
-        showStreamToast("All stream servers offline. Please try another title.", 4000);
+        showStreamToast("All stream servers tested. Please try another server or title.", 4000);
     }
 }
 
@@ -702,30 +750,16 @@ async function resolveWebDynamicStreams(movie) {
         const result = await res.json();
         if (result && result.status === "success" && Array.isArray(result.sources) && result.sources.length > 0) {
             console.log(`[StreamEngine] Resolved ${result.sources.length} dynamic stream sources:`, result.sources);
-            let addedCount = 0;
-            result.sources.forEach(src => {
-                if (src && typeof src === "string" && src.startsWith("http") && !activeServerList.includes(src)) {
-                    // Remove placeholder fallback if real dynamic sources were discovered
-                    const dummyIdx = activeServerList.indexOf("https://videonode.de/iframe/p2p/fa848b1095647d3c9865199f5020636d");
-                    if (dummyIdx !== -1) {
-                        activeServerList.splice(dummyIdx, 1);
-                    }
-                    activeServerList.push(src);
-                    addedCount++;
-                }
-            });
+            
+            // Replace server list with fresh prioritized live streams (turbovidhls, gn1r5n, abyssplayer, playcdn)
+            activeServerList = result.sources;
+            window.activeServerList = activeServerList;
 
-            if (addedCount > 0) {
-                const iframe = document.getElementById("videoIframe");
-                const nativeVideo = document.getElementById("nativeVideoPlayer");
-                const isBlankOrDummy = !iframe || !iframe.src || iframe.src === "about:blank" || iframe.src.includes("fa848b1095647d3c9865199f5020636d");
+            // Automatically switch to the top working direct stream server
+            activeServerIndex = 0;
+            playCurrentServerStream();
 
-                if (isBlankOrDummy && (!nativeVideo || nativeVideo.classList.contains("hidden"))) {
-                    activeServerIndex = 0;
-                    playCurrentServerStream();
-                }
-                showStreamToast(`Dynamic streams loaded (${activeServerList.length} servers available)`, 2000);
-            }
+            showStreamToast(`Dynamic streams loaded (${activeServerList.length} servers available)`, 2500);
         }
     } catch (e) {
         if (e.name !== "AbortError") {
