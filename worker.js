@@ -98,6 +98,88 @@ export default {
         return new Response(JSON.stringify({ status: "success", data: item }), { headers: corsHeaders });
       }
 
+      // Endpoint 5: Live Stream Server Resolver (App-level dynamic source resolution)
+      if (path === "/api/resolve") {
+        const targetUrl = url.searchParams.get("url") || "";
+        if (!targetUrl) {
+          return new Response(JSON.stringify({ status: "error", message: "Missing query parameter 'url'" }), { status: 400, headers: corsHeaders });
+        }
+
+        try {
+          const detailRes = await fetch(targetUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Referer": "https://tv12.lk21official.cc/"
+            }
+          });
+          const html = await detailRes.text();
+          const foundSources = [];
+
+          // 1. Extract all iframe embeds from detail page (excluding trailers)
+          const iframeRegex = /<iframe[^>]+src=["']([^"']+)["']/gi;
+          let m;
+          while ((m = iframeRegex.exec(html)) !== null) {
+            const src = m[1];
+            if (!src.includes("youtube") && !src.endsWith(".jpg") && !src.endsWith(".png") && !foundSources.includes(src)) {
+              foundSources.push(src);
+            }
+          }
+
+          // 2. Extract data-provider & alternative player server buttons
+          const providerRegex = /(?:data-url|data-src|data-provider)=["']([^"']+)["']/gi;
+          while ((m = providerRegex.exec(html)) !== null) {
+            const pUrl = m[1];
+            if (pUrl.startsWith("http") && !pUrl.includes("youtube") && !pUrl.endsWith(".jpg") && !pUrl.endsWith(".png") && !pUrl.endsWith(".webp") && !pUrl.contains("/uploads/") && !foundSources.includes(pUrl)) {
+              if (pUrl.includes("videonode") || pUrl.includes("playcdn") || pUrl.includes("embed") || pUrl.includes("player") || pUrl.includes("stream") || pUrl.includes("turbovip") || pUrl.includes("hydrax") || pUrl.includes("cast") || pUrl.includes("filelions")) {
+                foundSources.push(pUrl);
+              }
+            }
+          }
+
+          return new Response(JSON.stringify({
+            status: "success",
+            target: targetUrl,
+            count: foundSources.length,
+            sources: foundSources
+          }), { headers: corsHeaders });
+        } catch (fetchErr) {
+          return new Response(JSON.stringify({ status: "error", message: "Failed to resolve stream: " + fetchErr.message }), { status: 502, headers: corsHeaders });
+        }
+      }
+
+      // Endpoint 6: Stream Embed HTML Proxy (App-equivalent Web Player Proxy)
+      if (path === "/api/embed") {
+        const targetUrl = url.searchParams.get("url") || "";
+        if (!targetUrl) {
+          return new Response("Missing target embed url", { status: 400 });
+        }
+
+        try {
+          const embedRes = await fetch(targetUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Referer": "https://tv12.lk21official.cc/"
+            }
+          });
+
+          let fullHtml = await embedRes.text();
+          fullHtml = fullHtml.replaceAll("(?i)<script>[\\s\\S]*?devtoolIsOpening[\\s\\S]*?</script>", "<script>window.devtoolIsOpening=function(){};</script>");
+          fullHtml = fullHtml.replace("<a id=\"uyeouyeo\"", "<a id=\"uyeouyeo\" style=\"display:none!important;visibility:hidden!important;pointer-events:none!important;\"");
+          fullHtml = fullHtml.replace("debugger;", "");
+
+          return new Response(fullHtml, {
+            status: 200,
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Headers": "*"
+            }
+          });
+        } catch (embedErr) {
+          return new Response("Error loading embed player: " + embedErr.message, { status: 502 });
+        }
+      }
+
       return new Response(JSON.stringify({ status: "error", message: "Endpoint not found" }), { status: 404, headers: corsHeaders });
 
     } catch (err) {

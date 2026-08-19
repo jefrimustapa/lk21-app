@@ -551,6 +551,11 @@ function playCurrentServerStream() {
         } catch (e) {
             console.warn("Direct stream resolution error:", e);
         }
+    } else if (playUrl.includes("videonode.de/iframe/p2p/")) {
+        const p2pMatch = playUrl.match(/videonode\.de\/iframe\/p2p\/([a-zA-Z0-9_-]+)/);
+        if (p2pMatch && p2pMatch[1]) {
+            playUrl = `https://playcdn.de/video.php?id=${p2pMatch[1]}`;
+        }
     }
 
     const iframe = document.getElementById("videoIframe");
