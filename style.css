@@ -60,7 +60,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 4%;
+    padding: 15px 4% 0;
     z-index: 1000;
     background: rgba(15, 15, 15, 0.25);
     backdrop-filter: blur(16px);
