@@ -141,7 +141,7 @@ body {
     display: none;
 }
 
-/* Sub-Header Horizontal Mobile Genre Pill Bar */
+/* Sub-Header Horizontal Mobile Genre Pill Bar (Hidden on desktop, active on mobile) */
 .mobile-genre-bar {
     position: fixed;
     top: 68px;
@@ -152,7 +152,7 @@ body {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     z-index: 999;
-    display: flex;
+    display: none;
     align-items: center;
     gap: 8px;
     padding: 0 15px;
@@ -1549,6 +1549,7 @@ body.tv-mode .detail-actions .btn {
     }
     
     .mobile-genre-bar {
+        display: flex;
         top: 56px;
         height: 44px;
     }
