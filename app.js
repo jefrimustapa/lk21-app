@@ -524,10 +524,10 @@ function showStreamToast(message, duration = 3000) {
 
 function getServerDisplayName(url, index) {
     if (!url) return `Server ${index + 1}`;
-    if (url.includes("turbovidhls") || url.includes("emturbovid") || url.includes("turbovip")) return `Server ${index + 1}: Turbo`;
+    if (url.includes(".m3u8")) return `Server ${index + 1}: Direct HD`;
     if (url.includes("gn1r5n") || url.includes("filelions") || url.includes("cast")) return `Server ${index + 1}: HD Cast`;
+    if (url.includes("turbovidhls") || url.includes("emturbovid") || url.includes("turbovip")) return `Server ${index + 1}: Turbo`;
     if (url.includes("abyssplayer") || url.includes("hydrax")) return `Server ${index + 1}: Hydrax`;
-    if (url.includes(".m3u8")) return `Server ${index + 1}: HLS`;
     if (url.includes("playcdn")) return `Server ${index + 1}: PlayCDN`;
     if (url.includes("videonode")) return `Server ${index + 1}: VIP`;
     return `Server ${index + 1}`;

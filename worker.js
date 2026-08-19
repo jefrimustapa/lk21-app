@@ -198,7 +198,7 @@ export default {
             addSource(m[1]);
           }
 
-          // 4. Resolve direct master .m3u8 playlists from Turbovid for pure native HTML5 / Hls.js playback
+          // 4. Construct direct master .m3u8 playlists from Turbovid for pure native HTML5 / Hls.js playback
           const turbovidIds = [];
           foundSources.forEach(s => {
             const tm = s.match(/(?:turbovidhls\.com\/t\/|videonode\.de\/iframe\/turbovip\/)([a-zA-Z0-9_-]+)/);
@@ -208,34 +208,10 @@ export default {
           });
 
           for (const tid of turbovidIds) {
-            try {
-              const tvRes = await fetch(`https://turbovidhls.com/t/${tid}`, {
-                headers: {
-                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                  "Referer": "https://videonode.de/"
-                }
-              });
-              if (tvRes.ok) {
-                const tvHtml = await tvRes.text();
-                // Extract packed script and de-obfuscate urlPlay
-                const scripts = [...tvHtml.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(sm => sm[1]);
-                for (const s of scripts) {
-                  if (s.includes("eval(") && (s.includes("_0xc71e") || s.includes("split"))) {
-                    const evalIdx = s.lastIndexOf("eval(");
-                    if (evalIdx !== -1) {
-                      let unpacked = "";
-                      const fakeEval = (code) => { unpacked = code; };
-                      const wrapper = s.substring(0, evalIdx) + "fakeEval(" + s.substring(evalIdx + 5);
-                      (0, eval)(wrapper);
-                      const m3u8Match = unpacked.match(/urlPlay\s*=\s*'([^']+)'/);
-                      if (m3u8Match && m3u8Match[1] && !foundSources.includes(m3u8Match[1])) {
-                        foundSources.unshift(m3u8Match[1]);
-                      }
-                    }
-                  }
-                }
-              }
-            } catch(e) {}
+            const directM3u8 = `https://cdn.turboviplay.com/data/${tid}/${tid}.m3u8`;
+            if (!foundSources.includes(directM3u8)) {
+              foundSources.unshift(directM3u8);
+            }
           }
 
           // Prioritize direct raw .m3u8, then gn1r5n/cast, abyssplayer/hydrax, turbovid, and playcdn
