@@ -100,9 +100,15 @@ export default {
 
       // Endpoint 5: Live Stream Server Resolver (App-level dynamic source resolution)
       if (path === "/api/resolve") {
-        const targetUrl = url.searchParams.get("url") || "";
+        let targetUrl = url.searchParams.get("url") || "";
+        const slug = url.searchParams.get("slug") || "";
+
+        if (!targetUrl && slug) {
+          targetUrl = `https://tv12.lk21official.cc/${slug}`;
+        }
+
         if (!targetUrl) {
-          return new Response(JSON.stringify({ status: "error", message: "Missing query parameter 'url'" }), { status: 400, headers: corsHeaders });
+          return new Response(JSON.stringify({ status: "error", message: "Missing query parameter 'url' or 'slug'" }), { status: 400, headers: corsHeaders });
         }
 
         try {
@@ -115,25 +121,54 @@ export default {
           const html = await detailRes.text();
           const foundSources = [];
 
+          const addSource = (src) => {
+            if (!src || typeof src !== "string") return;
+            src = src.trim();
+            if (src.startsWith("//")) src = "https:" + src;
+            if (src.startsWith("/")) src = "https://tv12.lk21official.cc" + src;
+            if (!src.startsWith("http")) return;
+
+            // Exclude non-stream assets & trackers
+            if (src.includes("youtube") || src.includes("google") || src.endsWith(".jpg") || src.endsWith(".png") || src.endsWith(".webp") || src.includes("/uploads/")) {
+              return;
+            }
+
+            if (!foundSources.includes(src)) {
+              foundSources.push(src);
+            }
+
+            // If it's a videonode p2p link, also add the direct playcdn version
+            if (src.includes("videonode.de/iframe/p2p/")) {
+              const p2pMatch = src.match(/videonode\.de\/iframe\/p2p\/([a-zA-Z0-9_-]+)/);
+              if (p2pMatch && p2pMatch[1]) {
+                const playCdnUrl = `https://playcdn.de/video.php?id=${p2pMatch[1]}`;
+                if (!foundSources.includes(playCdnUrl)) {
+                  foundSources.push(playCdnUrl);
+                }
+              }
+            }
+          };
+
           // 1. Extract all iframe embeds from detail page (excluding trailers)
           const iframeRegex = /<iframe[^>]+src=["']([^"']+)["']/gi;
           let m;
           while ((m = iframeRegex.exec(html)) !== null) {
-            const src = m[1];
-            if (!src.includes("youtube") && !src.endsWith(".jpg") && !src.endsWith(".png") && !foundSources.includes(src)) {
-              foundSources.push(src);
-            }
+            addSource(m[1]);
           }
 
           // 2. Extract data-provider & alternative player server buttons
-          const providerRegex = /(?:data-url|data-src|data-provider)=["']([^"']+)["']/gi;
+          const providerRegex = /(?:data-url|data-src|data-provider|data-href|data-stream)=["']([^"']+)["']/gi;
           while ((m = providerRegex.exec(html)) !== null) {
             const pUrl = m[1];
-            if (pUrl.startsWith("http") && !pUrl.includes("youtube") && !pUrl.endsWith(".jpg") && !pUrl.endsWith(".png") && !pUrl.endsWith(".webp") && !pUrl.contains("/uploads/") && !foundSources.includes(pUrl)) {
-              if (pUrl.includes("videonode") || pUrl.includes("playcdn") || pUrl.includes("embed") || pUrl.includes("player") || pUrl.includes("stream") || pUrl.includes("turbovip") || pUrl.includes("hydrax") || pUrl.includes("cast") || pUrl.includes("filelions")) {
-                foundSources.push(pUrl);
-              }
+            if (pUrl.includes("videonode") || pUrl.includes("playcdn") || pUrl.includes("watchcdn") || pUrl.includes("embed") || pUrl.includes("player") || pUrl.includes("stream") || pUrl.includes("turbovip") || pUrl.includes("hydrax") || pUrl.includes("cast") || pUrl.includes("filelions") || pUrl.includes(".m3u8")) {
+              addSource(pUrl);
             }
+          }
+
+          // 3. Extract player links inside script tags or onclick handlers
+          const onclickRegex = /(?:loadPlayer|changeServer|loadEmbed|openStream)\(["']([^"']+)["']\)/gi;
+          while ((m = onclickRegex.exec(html)) !== null) {
+            addSource(m[1]);
           }
 
           return new Response(JSON.stringify({
@@ -149,30 +184,56 @@ export default {
 
       // Endpoint 6: Stream Embed HTML Proxy (App-equivalent Web Player Proxy)
       if (path === "/api/embed") {
-        const targetUrl = url.searchParams.get("url") || "";
+        let targetUrl = url.searchParams.get("url") || "";
         if (!targetUrl) {
           return new Response("Missing target embed url", { status: 400 });
         }
 
+        // Direct unwrapping of videonode p2p to playcdn video for direct clean proxying
+        if (targetUrl.includes("videonode.de/iframe/p2p/")) {
+          const p2pMatch = targetUrl.match(/videonode\.de\/iframe\/p2p\/([a-zA-Z0-9_-]+)/);
+          if (p2pMatch && p2pMatch[1]) {
+            targetUrl = `https://playcdn.de/video.php?id=${p2pMatch[1]}`;
+          }
+        }
+
         try {
+          const originHost = new URL(targetUrl).origin;
           const embedRes = await fetch(targetUrl, {
             headers: {
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-              "Referer": "https://tv12.lk21official.cc/"
+              "Referer": targetUrl.includes("playcdn.de") ? "https://videonode.de/" : "https://tv12.lk21official.cc/"
             }
           });
 
           let fullHtml = await embedRes.text();
-          fullHtml = fullHtml.replaceAll("(?i)<script>[\\s\\S]*?devtoolIsOpening[\\s\\S]*?</script>", "<script>window.devtoolIsOpening=function(){};</script>");
+
+          // 1. Inject base tag so all relative assets & scripts (js/hls, style.min.css, api2.php) resolve to originHost
+          const baseTag = `<base href="${originHost}/">`;
+          if (fullHtml.includes("<head>")) {
+            fullHtml = fullHtml.replace("<head>", `<head>${baseTag}`);
+          } else {
+            fullHtml = baseTag + fullHtml;
+          }
+
+          // 2. Neutralize top-frame redirects & devtool traps
+          fullHtml = fullHtml.replace(/if\s*\(\s*window\.self\s*===\s*window\.top\s*\)\s*\{[\s\S]*?\}/gi, "");
+          fullHtml = fullHtml.replace(/<script>[\s\S]*?devtoolIsOpening[\s\S]*?<\/script>/gi, "<script>window.devtoolIsOpening=function(){};</script>");
           fullHtml = fullHtml.replace("<a id=\"uyeouyeo\"", "<a id=\"uyeouyeo\" style=\"display:none!important;visibility:hidden!important;pointer-events:none!important;\"");
-          fullHtml = fullHtml.replace("debugger;", "");
+          fullHtml = fullHtml.replace(/debugger;/g, "");
+
+          // 3. Rewrite any inner iframe embed sources to pass through our embed proxy as well
+          fullHtml = fullHtml.replace(/src=["'](https:\/\/(?:playcdn\.de|videonode\.de|watchcdn\.de)[^"']+)["']/gi, (match, p1) => {
+            return `src="https://lk21-api.lkapp.workers.dev/api/embed?url=${encodeURIComponent(p1)}"`;
+          });
 
           return new Response(fullHtml, {
             status: 200,
             headers: {
               "Content-Type": "text/html; charset=utf-8",
               "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Headers": "*"
+              "Access-Control-Allow-Headers": "*",
+              "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
             }
           });
         } catch (embedErr) {
