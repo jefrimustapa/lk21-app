@@ -76,9 +76,10 @@ body {
 .nav-left {
     display: flex;
     align-items: center;
-    gap: 30px;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
     overflow-x: auto;
-    max-width: 70%;
 }
 
 .nav-left::-webkit-scrollbar {
