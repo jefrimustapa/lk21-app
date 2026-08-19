@@ -967,6 +967,73 @@ body.tv-mode .hero-content {
     gap: 6px;
 }
 
+.player-server-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 12px;
+    overflow-x: auto;
+    max-width: 42vw;
+    scrollbar-width: none;
+}
+
+.player-server-selector::-webkit-scrollbar {
+    display: none;
+}
+
+.server-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e5e5e5;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.server-pill:hover, .server-pill:focus {
+    background: rgba(255, 255, 255, 0.25);
+    color: #FFF;
+    transform: translateY(-1px);
+}
+
+.server-pill.active {
+    background: var(--netflix-red);
+    border-color: var(--netflix-red);
+    color: #FFF;
+    box-shadow: 0 0 12px rgba(229, 9, 20, 0.6);
+}
+
+.btn-switch-server {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(229, 9, 20, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #FFF;
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+    margin-right: 12px;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.btn-switch-server:hover, .btn-switch-server:focus {
+    background: var(--netflix-red);
+    transform: scale(1.04);
+}
+
 .player-remote-hints {
     display: flex;
     align-items: center;

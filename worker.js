@@ -133,11 +133,34 @@ export default {
               return;
             }
 
-            if (!foundSources.includes(src)) {
-              foundSources.push(src);
+            // 1. Unwrap TurboVIP to direct turbovidhls player
+            if (src.includes("videonode.de/iframe/turbovip/")) {
+              const m = src.match(/videonode\.de\/iframe\/turbovip\/([a-zA-Z0-9_-]+)/);
+              if (m && m[1]) {
+                const directUrl = `https://turbovidhls.com/t/${m[1]}`;
+                if (!foundSources.includes(directUrl)) foundSources.push(directUrl);
+              }
             }
 
-            // If it's a videonode p2p link, also add the direct playcdn version
+            // 2. Unwrap Cast/FileLions to direct gn1r5n player
+            if (src.includes("videonode.de/iframe/cast/")) {
+              const m = src.match(/videonode\.de\/iframe\/cast\/([a-zA-Z0-9_-]+)/);
+              if (m && m[1]) {
+                const directUrl = `https://gn1r5n.org/e/${m[1]}`;
+                if (!foundSources.includes(directUrl)) foundSources.push(directUrl);
+              }
+            }
+
+            // 3. Unwrap Hydrax to direct abyssplayer
+            if (src.includes("videonode.de/iframe/hydrax/")) {
+              const m = src.match(/videonode\.de\/iframe\/hydrax\/([a-zA-Z0-9_-]+)/);
+              if (m && m[1]) {
+                const directUrl = `https://abyssplayer.com/${m[1]}`;
+                if (!foundSources.includes(directUrl)) foundSources.push(directUrl);
+              }
+            }
+
+            // 4. Unwrap P2P to playcdn
             if (src.includes("videonode.de/iframe/p2p/")) {
               const p2pMatch = src.match(/videonode\.de\/iframe\/p2p\/([a-zA-Z0-9_-]+)/);
               if (p2pMatch && p2pMatch[1]) {
@@ -146,6 +169,10 @@ export default {
                   foundSources.push(playCdnUrl);
                 }
               }
+            }
+
+            if (!foundSources.includes(src)) {
+              foundSources.push(src);
             }
           };
 
@@ -160,7 +187,7 @@ export default {
           const providerRegex = /(?:data-url|data-src|data-provider|data-href|data-stream)=["']([^"']+)["']/gi;
           while ((m = providerRegex.exec(html)) !== null) {
             const pUrl = m[1];
-            if (pUrl.includes("videonode") || pUrl.includes("playcdn") || pUrl.includes("watchcdn") || pUrl.includes("embed") || pUrl.includes("player") || pUrl.includes("stream") || pUrl.includes("turbovip") || pUrl.includes("hydrax") || pUrl.includes("cast") || pUrl.includes("filelions") || pUrl.includes(".m3u8")) {
+            if (pUrl.includes("videonode") || pUrl.includes("turbovid") || pUrl.includes("playcdn") || pUrl.includes("watchcdn") || pUrl.includes("embed") || pUrl.includes("player") || pUrl.includes("stream") || pUrl.includes("turbovip") || pUrl.includes("hydrax") || pUrl.includes("cast") || pUrl.includes("filelions") || pUrl.includes(".m3u8")) {
               addSource(pUrl);
             }
           }
@@ -170,6 +197,20 @@ export default {
           while ((m = onclickRegex.exec(html)) !== null) {
             addSource(m[1]);
           }
+
+          // Prioritize direct un-restricted players (turbovidhls, gn1r5n, abyssplayer, .m3u8) first
+          foundSources.sort((a, b) => {
+            const getScore = (url) => {
+              if (url.includes("turbovidhls.com") || url.includes("emturbovid.com")) return 1;
+              if (url.includes("gn1r5n.org") || url.includes("filelions")) return 2;
+              if (url.includes("abyssplayer.com")) return 3;
+              if (url.includes(".m3u8")) return 4;
+              if (url.includes("playcdn.de")) return 5;
+              if (url.includes("videonode.de")) return 6;
+              return 7;
+            };
+            return getScore(a) - getScore(b);
+          });
 
           return new Response(JSON.stringify({
             status: "success",
