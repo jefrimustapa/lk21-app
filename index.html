@@ -14,7 +14,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=20260820_3">
+    <link rel="stylesheet" href="style.css?v=20260820_4">
     <script>
         // Immediate detection: If running inside Android TV bridge or big screen/no touch, apply tv-mode immediately
         (function() {
@@ -157,7 +157,7 @@
     <!-- Full Viewport Embedded Cinema Stream -->
         <div class="player-container">
             <video id="nativeVideoPlayer" class="hidden" controls autoplay playsinline style="width: 100%; height: 100%; object-fit: contain; background: #000;"></video>
-            <iframe id="videoIframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+            <iframe id="videoIframe" src="" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="no-referrer"></iframe>
         </div>
     </div>
 
@@ -212,6 +212,6 @@
 
 
     <script src="hls.min.js?v=20260819_2"></script>
-    <script src="app.js?v=20260820_3"></script>
+    <script src="app.js?v=20260820_4"></script>
 </body>
 </html>
