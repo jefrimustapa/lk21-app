@@ -678,10 +678,9 @@ function playCurrentServerStream() {
                 embedUrl += (embedUrl.includes("?") ? "&" : "?") + "autoplay=1&autostart=true";
             }
             
-            // On web browsers (outside native Android webview bridge), route through embed proxy only for hosts with strict CSP (videonode, playcdn)
+            // On web browsers (outside native Android webview bridge), route through embed proxy to bypass CSP and neutralize anti-inspect blockers
             if (typeof window.AndroidBridge === "undefined") {
-                const isCspBlockedHost = embedUrl.includes("videonode.de") || embedUrl.includes("playcdn.de");
-                if (isCspBlockedHost && !embedUrl.includes("/api/embed?url=")) {
+                if (!embedUrl.includes("/api/embed?url=")) {
                     embedUrl = `${API_BASE}/api/embed?url=${encodeURIComponent(embedUrl)}`;
                 }
             }

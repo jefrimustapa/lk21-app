@@ -198,30 +198,13 @@ export default {
             addSource(m[1]);
           }
 
-          // 4. Construct direct master .m3u8 playlists from Turbovid for pure native HTML5 / Hls.js playback
-          const turbovidIds = [];
-          foundSources.forEach(s => {
-            const tm = s.match(/(?:turbovidhls\.com\/t\/|videonode\.de\/iframe\/turbovip\/)([a-zA-Z0-9_-]+)/);
-            if (tm && tm[1] && !turbovidIds.includes(tm[1])) {
-              turbovidIds.push(tm[1]);
-            }
-          });
-
-          for (const tid of turbovidIds) {
-            const directM3u8 = `https://cdn.turboviplay.com/data/${tid}/${tid}.m3u8`;
-            if (!foundSources.includes(directM3u8)) {
-              foundSources.unshift(directM3u8);
-            }
-          }
-
-          // Prioritize direct raw .m3u8, then gn1r5n/cast, abyssplayer/hydrax, turbovid, and playcdn
+          // Prioritize direct un-restricted players (turbovid, gn1r5n, playcdn, abyssplayer)
           foundSources.sort((a, b) => {
             const getScore = (url) => {
-              if (url.includes(".m3u8")) return 0;
-              if (url.includes("gn1r5n.org") || url.includes("filelions")) return 1;
-              if (url.includes("abyssplayer.com") || url.includes("hydrax")) return 2;
-              if (url.includes("turbovidhls.com") || url.includes("emturbovid.com")) return 3;
-              if (url.includes("playcdn.de")) return 4;
+              if (url.includes("turbovidhls.com") || url.includes("emturbovid.com")) return 1;
+              if (url.includes("gn1r5n.org") || url.includes("filelions")) return 2;
+              if (url.includes("playcdn.de")) return 3;
+              if (url.includes("abyssplayer.com") || url.includes("hydrax")) return 4;
               if (url.includes("videonode.de")) return 5;
               return 6;
             };
@@ -256,10 +239,11 @@ export default {
 
         try {
           const originHost = new URL(targetUrl).origin;
+          const referer = (targetUrl.includes("turbovid") || targetUrl.includes("playcdn.de")) ? "https://videonode.de/" : "https://tv12.lk21official.cc/";
           const embedRes = await fetch(targetUrl, {
             headers: {
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-              "Referer": targetUrl.includes("playcdn.de") ? "https://videonode.de/" : "https://tv12.lk21official.cc/"
+              "Referer": referer
             }
           });
 
@@ -274,10 +258,11 @@ export default {
           }
 
           // 2. Neutralize top-frame redirects & devtool traps
+          fullHtml = fullHtml.replace(/function devtoolIsOpening\(\)[\s\S]*?setTimeout\(devtoolIsOpening,\s*\d+\);\s*\}/gi, "function devtoolIsOpening(){}");
+          fullHtml = fullHtml.replace(/devtoolIsOpening\(\);/gi, "");
           fullHtml = fullHtml.replace(/if\s*\(\s*window\.self\s*===\s*window\.top\s*\)\s*\{[\s\S]*?\}/gi, "");
-          fullHtml = fullHtml.replace(/<script>[\s\S]*?devtoolIsOpening[\s\S]*?<\/script>/gi, "<script>window.devtoolIsOpening=function(){};</script>");
+          fullHtml = fullHtml.replace(/debugger;?/gi, "");
           fullHtml = fullHtml.replace("<a id=\"uyeouyeo\"", "<a id=\"uyeouyeo\" style=\"display:none!important;visibility:hidden!important;pointer-events:none!important;\"");
-          fullHtml = fullHtml.replace(/debugger;/g, "");
 
           // 3. Neutralize anti-inspect & domain blockers (Turbovid Security alert)
           fullHtml = fullHtml.replace(/var checkDomain\s*=\s*false;/g, "var checkDomain = true;");
@@ -285,7 +270,7 @@ export default {
           fullHtml = fullHtml.replace(/checkIframe\s*==\s*['"]no iframe['"]/g, "true");
 
           // 4. Rewrite any inner iframe embed sources to pass through our embed proxy as well
-          fullHtml = fullHtml.replace(/src=["'](https:\/\/(?:playcdn\.de|videonode\.de|watchcdn\.de)[^"']+)["']/gi, (match, p1) => {
+          fullHtml = fullHtml.replace(/src=["'](https:\/\/(?:playcdn\.de|videonode\.de|watchcdn\.de|turbovidhls\.com|emturbovid\.com)[^"']+)["']/gi, (match, p1) => {
             return `src="https://lk21-api.lkapp.workers.dev/api/embed?url=${encodeURIComponent(p1)}"`;
           });
 
