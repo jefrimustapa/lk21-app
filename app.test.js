@@ -84,8 +84,8 @@ describe('LKFlix App Logic, Navigation & Player Unit Tests', () => {
         expect(playerModal.classList.contains('hidden')).toBe(false);
         expect(document.getElementById('playerTitle').textContent).toBe('Inception 2010');
         expect(document.getElementById('playerQuality').textContent).toBe('1080p');
-        expect(document.getElementById('videoIframe').src).toContain('https://videonode.de/iframe/p2p/test123');
-        expect(document.getElementById('videoIframe').src).toContain('autoplay=1');
+        expect(document.getElementById('videoIframe').src).toMatch(/(test123|api\/embed)/);
+        expect(decodeURIComponent(document.getElementById('videoIframe').src)).toContain('autoplay=1');
     });
 
     it('4. Player View: Seek function displays center-screen HUD toast with +10s / -10s', () => {
@@ -179,5 +179,34 @@ describe('LKFlix App Logic, Navigation & Player Unit Tests', () => {
         // Press Escape again -> Should close detail modal
         document.dispatchEvent(backEvent);
         expect(detailModal.classList.contains('detail-open')).toBe(false);
+    });
+
+    it('9. Web Dynamic Stream Resolution: fetches live stream servers from backend on web', async () => {
+        let requestedUrl = '';
+        window.fetch = (url) => {
+            requestedUrl = url;
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({
+                    status: 'success',
+                    sources: [
+                        'https://videonode.de/iframe/p2p/dynamic-live-1',
+                        'https://turbovip.org/embed/dynamic-live-2'
+                    ]
+                })
+            });
+        };
+
+        const dynamicMovie = {
+            id: 'dyn-1',
+            title: 'Dynamic Title',
+            url: 'https://tv12.lk21official.cc/dynamic-title'
+        };
+
+        window.openPlayerModal(dynamicMovie);
+        await new Promise(r => setTimeout(r, 50));
+
+        expect(requestedUrl).toContain('/api/resolve?url=');
+        expect(window.activeServerList.some(s => s.includes('dynamic-live-1') || s.includes('dynamic-live-2'))).toBe(true);
     });
 });

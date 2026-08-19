@@ -505,6 +505,7 @@ function seekPlayerStream(seconds) {
 }
 
 let activeServerList = [];
+window.activeServerList = activeServerList;
 let activeServerIndex = 0;
 let activeMovieForPlayer = null;
 let streamFallbackTimer = null;
@@ -630,6 +631,13 @@ function playCurrentServerStream() {
                 embedUrl += (embedUrl.includes("?") ? "&" : "?") + "autoplay=1&autostart=true";
             }
             
+            // On web browsers (outside native Android webview bridge), route through embed proxy to bypass frame-ancestors CSP restrictions
+            if (typeof window.AndroidBridge === "undefined") {
+                if (!embedUrl.includes("/api/embed?url=")) {
+                    embedUrl = `${API_BASE}/api/embed?url=${encodeURIComponent(embedUrl)}`;
+                }
+            }
+            
             iframe.src = embedUrl;
 
             // Trigger autoplay postMessage commands once loaded
@@ -673,6 +681,59 @@ window.addEventListener("message", (event) => {
     } catch (e) {}
 });
 
+let currentDynamicStreamAbortCtrl = null;
+
+async function resolveWebDynamicStreams(movie) {
+    if (!movie) return;
+    const targetUrl = movie.url || (movie.slug ? `https://tv12.lk21official.cc/${movie.slug}` : "");
+    if (!targetUrl) return;
+
+    if (currentDynamicStreamAbortCtrl) {
+        currentDynamicStreamAbortCtrl.abort();
+    }
+    currentDynamicStreamAbortCtrl = new AbortController();
+
+    try {
+        console.log(`[StreamEngine] Dynamically resolving live stream sources on web for: ${movie.title || targetUrl}`);
+        const res = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(targetUrl)}`, {
+            signal: currentDynamicStreamAbortCtrl.signal
+        });
+        if (!res.ok) return;
+        const result = await res.json();
+        if (result && result.status === "success" && Array.isArray(result.sources) && result.sources.length > 0) {
+            console.log(`[StreamEngine] Resolved ${result.sources.length} dynamic stream sources:`, result.sources);
+            let addedCount = 0;
+            result.sources.forEach(src => {
+                if (src && typeof src === "string" && src.startsWith("http") && !activeServerList.includes(src)) {
+                    // Remove placeholder fallback if real dynamic sources were discovered
+                    const dummyIdx = activeServerList.indexOf("https://videonode.de/iframe/p2p/fa848b1095647d3c9865199f5020636d");
+                    if (dummyIdx !== -1) {
+                        activeServerList.splice(dummyIdx, 1);
+                    }
+                    activeServerList.push(src);
+                    addedCount++;
+                }
+            });
+
+            if (addedCount > 0) {
+                const iframe = document.getElementById("videoIframe");
+                const nativeVideo = document.getElementById("nativeVideoPlayer");
+                const isBlankOrDummy = !iframe || !iframe.src || iframe.src === "about:blank" || iframe.src.includes("fa848b1095647d3c9865199f5020636d");
+
+                if (isBlankOrDummy && (!nativeVideo || nativeVideo.classList.contains("hidden"))) {
+                    activeServerIndex = 0;
+                    playCurrentServerStream();
+                }
+                showStreamToast(`Dynamic streams loaded (${activeServerList.length} servers available)`, 2000);
+            }
+        }
+    } catch (e) {
+        if (e.name !== "AbortError") {
+            console.warn("[StreamEngine] Web dynamic stream resolution error:", e);
+        }
+    }
+}
+
 function openPlayerModal(movie) {
     const modal = document.getElementById("playerModal");
     activeMovieForPlayer = movie;
@@ -688,9 +749,10 @@ function openPlayerModal(movie) {
 
     // Prepare list of candidate stream servers
     activeServerList = [];
+    window.activeServerList = activeServerList;
     activeServerIndex = 0;
 
-    // 1. Dynamic stream resolution from detail page via AndroidBridge
+    // 1. Dynamic stream resolution from detail page via AndroidBridge (Native Android App)
     if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.resolveDetailStreamSources === "function" && movie.url) {
         try {
             const rawSources = window.AndroidBridge.resolveDetailStreamSources(movie.url);
@@ -709,7 +771,7 @@ function openPlayerModal(movie) {
         }
     }
 
-    // 2. Pre-scraped iframe_url & stream_url fallbacks
+    // 2. Pre-scraped iframe_url & stream_url fallbacks (Immediate zero-latency playback)
     if (movie.iframe_url && !activeServerList.includes(movie.iframe_url)) {
         activeServerList.push(movie.iframe_url);
     }
@@ -717,9 +779,14 @@ function openPlayerModal(movie) {
         activeServerList.push(movie.stream_url);
     }
 
-    // 3. Fallback default if completely empty
+    // 3. Fallback default placeholder if completely empty
     if (activeServerList.length === 0) {
         activeServerList.push("https://videonode.de/iframe/p2p/fa848b1095647d3c9865199f5020636d");
+    }
+
+    // 4. Web Dynamic Stream Resolver (fetch & append fresh live streams asynchronously on web)
+    if (typeof window.AndroidBridge === "undefined" && (movie.url || movie.slug)) {
+        resolveWebDynamicStreams(movie);
     }
 
     console.log("[StreamEngine] Initialized candidate stream servers:", activeServerList);
@@ -761,6 +828,11 @@ function closePlayerModal(fromHistory = false) {
     const modal = document.getElementById("playerModal");
     if (modal.classList.contains("hidden")) return;
     
+    if (currentDynamicStreamAbortCtrl) {
+        currentDynamicStreamAbortCtrl.abort();
+        currentDynamicStreamAbortCtrl = null;
+    }
+
     if (playerHeaderTimer) clearTimeout(playerHeaderTimer);
     const header = document.querySelector(".player-header");
     if (header) header.classList.remove("fade-out");
