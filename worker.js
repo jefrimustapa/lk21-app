@@ -198,16 +198,32 @@ export default {
             addSource(m[1]);
           }
 
-          // Prioritize direct un-restricted players (turbovidhls, gn1r5n, abyssplayer, .m3u8) first
+          // 4. Construct direct master .m3u8 playlists from Turbovid for pure native HTML5 / Hls.js playback
+          const turbovidIds = [];
+          foundSources.forEach(s => {
+            const tm = s.match(/(?:turbovidhls\.com\/t\/|videonode\.de\/iframe\/turbovip\/)([a-zA-Z0-9_-]+)/);
+            if (tm && tm[1] && !turbovidIds.includes(tm[1])) {
+              turbovidIds.push(tm[1]);
+            }
+          });
+
+          for (const tid of turbovidIds) {
+            const directM3u8 = `https://cdn.turboviplay.com/data/${tid}/${tid}.m3u8`;
+            if (!foundSources.includes(directM3u8)) {
+              foundSources.unshift(directM3u8);
+            }
+          }
+
+          // Prioritize direct raw .m3u8, then gn1r5n/cast, abyssplayer/hydrax, turbovid, and playcdn
           foundSources.sort((a, b) => {
             const getScore = (url) => {
-              if (url.includes("turbovidhls.com") || url.includes("emturbovid.com")) return 1;
-              if (url.includes("gn1r5n.org") || url.includes("filelions")) return 2;
-              if (url.includes("abyssplayer.com")) return 3;
-              if (url.includes(".m3u8")) return 4;
-              if (url.includes("playcdn.de")) return 5;
-              if (url.includes("videonode.de")) return 6;
-              return 7;
+              if (url.includes(".m3u8")) return 0;
+              if (url.includes("gn1r5n.org") || url.includes("filelions")) return 1;
+              if (url.includes("abyssplayer.com") || url.includes("hydrax")) return 2;
+              if (url.includes("turbovidhls.com") || url.includes("emturbovid.com")) return 3;
+              if (url.includes("playcdn.de")) return 4;
+              if (url.includes("videonode.de")) return 5;
+              return 6;
             };
             return getScore(a) - getScore(b);
           });
@@ -263,7 +279,12 @@ export default {
           fullHtml = fullHtml.replace("<a id=\"uyeouyeo\"", "<a id=\"uyeouyeo\" style=\"display:none!important;visibility:hidden!important;pointer-events:none!important;\"");
           fullHtml = fullHtml.replace(/debugger;/g, "");
 
-          // 3. Rewrite any inner iframe embed sources to pass through our embed proxy as well
+          // 3. Neutralize anti-inspect & domain blockers (Turbovid Security alert)
+          fullHtml = fullHtml.replace(/var checkDomain\s*=\s*false;/g, "var checkDomain = true;");
+          fullHtml = fullHtml.replace(/domainEmbed\s*=\s*['"][^'"]+['"]/g, "domainEmbed = 'no'");
+          fullHtml = fullHtml.replace(/checkIframe\s*==\s*['"]no iframe['"]/g, "true");
+
+          // 4. Rewrite any inner iframe embed sources to pass through our embed proxy as well
           fullHtml = fullHtml.replace(/src=["'](https:\/\/(?:playcdn\.de|videonode\.de|watchcdn\.de)[^"']+)["']/gi, (match, p1) => {
             return `src="https://lk21-api.lkapp.workers.dev/api/embed?url=${encodeURIComponent(p1)}"`;
           });
