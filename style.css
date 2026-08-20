@@ -1466,12 +1466,12 @@ body.tv-mode .detail-backdrop-overlay {
 html.tv-mode .btn-back-detail,
 body.tv-mode .btn-back-detail {
     position: absolute;
-    top: 20px;
+    top: 32px;
     left: 48px;
     z-index: 50;
     font-size: 0.95rem;
     font-weight: 700;
-    padding: 8px 20px;
+    padding: 8px 22px;
     border-radius: 24px;
     background: rgba(30, 30, 30, 0.85);
     border: 2px solid rgba(255, 255, 255, 0.3);
@@ -1497,23 +1497,23 @@ html.tv-mode .detail-page-content,
 body.tv-mode .detail-page-content {
     position: relative;
     z-index: 5;
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 36px;
-    padding: 68px 48px 8px 48px;
-    margin-top: 0;
-    width: 100vw;
-    max-width: 100vw;
-    height: auto;
-    min-height: auto;
-    box-sizing: border-box;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 40px !important;
+    padding: 85px 48px 8px 48px !important;
+    margin-top: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    min-height: auto !important;
+    box-sizing: border-box !important;
 }
 
 html.tv-mode .detail-poster,
 body.tv-mode .detail-poster {
-    width: 180px;
-    max-height: 270px;
+    width: 175px;
+    max-height: 260px;
     aspect-ratio: 2/3;
     flex-shrink: 0;
     border-radius: 12px;
@@ -1525,7 +1525,7 @@ html.tv-mode .detail-info,
 body.tv-mode .detail-info {
     flex: 1;
     max-width: 720px;
-    padding-top: 0;
+    padding-top: 2px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -1535,8 +1535,9 @@ html.tv-mode .detail-title,
 body.tv-mode .detail-title {
     font-size: 2.0rem;
     font-weight: 800;
+    margin-top: 0;
     margin-bottom: 8px;
-    line-height: 1.15;
+    line-height: 1.2;
     color: #FFF;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
 }
@@ -1890,26 +1891,26 @@ body.tv-mode #detailRelatedScroll {
 }
 
 /* ==========================================================================
-   Mobile / Touch Devices Landscape Layout Optimization
+   Mobile / Touch Devices Landscape Layout Optimization (Non-TV Only)
    ========================================================================== */
 @media (orientation: landscape) and (max-height: 550px) {
-    .movie-grid {
+    html:not(.tv-mode) body:not(.tv-mode) .movie-grid {
         grid-template-columns: repeat(4, 1fr) !important; /* 4 columns on x-axis in landscape */
         gap: 12px;
     }
 
-    .movie-card {
+    html:not(.tv-mode) body:not(.tv-mode) .movie-card {
         width: 100%;
         aspect-ratio: 2 / 3;
     }
 
-    .detail-backdrop {
+    html:not(.tv-mode) body:not(.tv-mode) .detail-backdrop {
         height: 35vh;
         min-height: 140px;
         max-height: 220px;
     }
 
-    .detail-page-content {
+    html:not(.tv-mode) body:not(.tv-mode) .detail-page-content {
         flex-direction: row !important; /* Force side-by-side layout in landscape */
         align-items: flex-start !important;
         margin-top: -40px !important;
@@ -1917,12 +1918,12 @@ body.tv-mode #detailRelatedScroll {
         gap: 24px !important;
     }
 
-    .detail-poster {
+    html:not(.tv-mode) body:not(.tv-mode) .detail-poster {
         width: 200px !important; /* 200px poster width */
         margin: 0 !important;
     }
 
-    .detail-info {
+    html:not(.tv-mode) body:not(.tv-mode) .detail-info {
         flex: 1 !important;
         min-width: 0 !important;
         padding-top: 20px !important;
@@ -1930,13 +1931,13 @@ body.tv-mode #detailRelatedScroll {
         width: auto !important;
     }
 
-    .detail-title {
+    html:not(.tv-mode) body:not(.tv-mode) .detail-title {
         font-size: 1.4rem;
         margin-bottom: 6px;
         text-align: left !important;
     }
 
-    .detail-synopsis {
+    html:not(.tv-mode) body:not(.tv-mode) .detail-synopsis {
         font-size: 0.85rem;
         line-height: 1.4;
         margin-bottom: 12px;
