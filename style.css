@@ -972,7 +972,7 @@ body.tv-mode .hero-content {
 }
 
 .player-title.marquee {
-    animation: titleMarquee 8s ease-in-out infinite alternate;
+    animation: titleMarquee 15s ease-in-out infinite alternate;
 }
 
 @keyframes titleMarquee {
