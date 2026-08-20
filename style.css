@@ -1793,15 +1793,15 @@ body.tv-mode .detail-actions .btn {
 
     .player-meta-title {
         margin-left: 6px;
-        flex: 1;
-        min-width: 0;
+        flex: 1 1 100px;
+        min-width: 100px;
         gap: 6px;
         overflow: hidden;
     }
 
     .player-title-box {
-        flex: 1;
-        min-width: 0;
+        flex: 1 1 100px;
+        min-width: 100px;
         overflow: hidden;
     }
 
