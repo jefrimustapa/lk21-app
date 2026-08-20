@@ -1306,7 +1306,7 @@ body.tv-mode .hero-content {
     gap: 14px;
     overflow-x: auto;
     overflow-y: hidden;
-    padding-bottom: 8px;
+    padding: 10px 4px; /* 10px top & bottom padding for cards */
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none; /* Hide scrollbar Firefox */
@@ -1728,12 +1728,30 @@ body.tv-mode .detail-actions .btn {
 
     .detail-info {
         padding-top: 20px;
-        text-align: center;
+        text-align: left;
         width: 100%;
+    }
+
+    .detail-title {
+        text-align: center;
     }
 
     .detail-tags {
         justify-content: center;
+    }
+
+    .detail-synopsis {
+        text-align: left;
+    }
+
+    .detail-meta-grid {
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .detail-info-group {
+        text-align: left;
+        justify-content: flex-start;
     }
 
     .detail-actions {
