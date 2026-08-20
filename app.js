@@ -411,7 +411,7 @@ function showPlayerHeaderTemporarily() {
         if (modal && !modal.classList.contains("hidden")) {
             header.classList.add("fade-out");
         }
-    }, 4000);
+    }, 10000);
 }
 
 let seekHudTimer = null;
