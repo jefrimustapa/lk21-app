@@ -451,10 +451,13 @@ function togglePlayerPlayback() {
     }
 
     const iframe = document.getElementById("videoIframe");
-    if (iframe && iframe.contentWindow) {
+    if (iframe) {
         try {
-            iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "togglePlay" }), "*");
-            iframe.contentWindow.postMessage({ type: "togglePlay" }, "*");
+            if (iframe.contentWindow) {
+                iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "togglePlay" }), "*");
+                iframe.contentWindow.postMessage(JSON.stringify({ type: "togglePlay", func: "togglePlay" }), "*");
+                iframe.contentWindow.postMessage({ type: "togglePlay" }, "*");
+            }
         } catch (e) {
             console.warn("Iframe toggle error:", e);
         }
