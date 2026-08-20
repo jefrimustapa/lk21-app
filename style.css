@@ -1113,17 +1113,17 @@ html.tv-mode .catalog-section {
 .player-meta-title {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 12px;
     flex: 1;
     min-width: 0;
-    margin-left: 24px;
-    margin-right: 14px;
+    margin-left: 20px;
+    margin-right: 4px; /* Reduced gap before Server button */
     overflow: hidden;
 }
 
 .player-title-box {
-    flex: 0 1 auto;
+    flex: 1;
     min-width: 0;
     overflow: hidden;
     white-space: nowrap;
@@ -1216,7 +1216,7 @@ html.tv-mode .catalog-section {
     font-weight: 700;
     cursor: pointer;
     outline: none;
-    margin-left: 10px;
+    margin-left: 4px; /* Reduced gap between movie identifier badges and Server button */
     margin-right: 12px;
     white-space: nowrap;
     transition: all 0.2s ease;
