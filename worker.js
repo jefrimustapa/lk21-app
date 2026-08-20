@@ -249,8 +249,8 @@ export default {
 
           let fullHtml = await embedRes.text();
 
-          // 1. Inject base tag and client-side eval sanitizer hook to neutralize packed anti-inspect traps & domain restrictions
-          const evalHook = `<base href="${originHost}/"><script>(function(){var origEval=window.eval;window.eval=function(code){if(typeof code==='string'){code=code.replace(/var\\s+domainEmbed\\s*=\\s*['\"][^'\"]+['\"]/g,"var domainEmbed='no'");code=code.replace(/domainEmbed\\s*!=\\s*['\"]no['\"]/g,"false");code=code.replace(/var\\s+checkDomain\\s*=\\s*false/g,"var checkDomain=true");code=code.replace(/if\\s*\\(\\s*!\\s*checkDomain\\s*\\)/g,"if(false)");code=code.replace(/if\\s*\\(\\s*window\\.self\\s*===\\s*window\\.top\\s*\\)[^}]+}/g,"");code=code.replace(/debugger/g,"");}return origEval.call(window,code);};})();</script>`;
+          // 1. Inject base tag and client-side eval sanitizer hook to neutralize packed anti-inspect traps, domain restrictions & popups
+          const evalHook = `<base href="${originHost}/"><script>(function(){window.open=function(){return null;};var origEval=window.eval;window.eval=function(code){if(typeof code==='string'){code=code.replace(/var\\s+domainEmbed\\s*=\\s*['\"][^'\"]+['\"]/g,"var domainEmbed='no'");code=code.replace(/domainEmbed\\s*!=\\s*['\"]no['\"]/g,"false");code=code.replace(/var\\s+checkDomain\\s*=\\s*false/g,"var checkDomain=true");code=code.replace(/if\\s*\\(\\s*!\\s*checkDomain\\s*\\)/g,"if(false)");code=code.replace(/if\\s*\\(\\s*window\\.self\\s*===\\s*window\\.top\\s*\\)[^}]+}/g,"");code=code.replace(/debugger/g,"");code=code.replace(/window\\.open/g,"(function(){return null;})");}return origEval.call(window,code);};})();</script>`;
           if (fullHtml.includes("<head>")) {
             fullHtml = fullHtml.replace("<head>", `<head>${evalHook}`);
           } else {

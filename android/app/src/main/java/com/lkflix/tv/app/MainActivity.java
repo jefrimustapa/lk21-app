@@ -49,6 +49,8 @@ public class MainActivity extends BridgeActivity {
             cookieManager.setAcceptCookie(true);
             cookieManager.setAcceptThirdPartyCookies(webView, true);
 
+            settings.setSupportMultipleWindows(false);
+            settings.setJavaScriptCanOpenWindowsAutomatically(false);
             settings.setUserAgentString("Mozilla/5.0 (Linux; Android 9; MiBOX4 Build/PI; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36");
 
             webView.setWebChromeClient(new android.webkit.WebChromeClient() {
@@ -56,10 +58,25 @@ public class MainActivity extends BridgeActivity {
                 public android.graphics.Bitmap getDefaultVideoPoster() {
                     return android.graphics.Bitmap.createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888);
                 }
+
+                @Override
+                public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
+                    Log.d("LKFlix", "Blocked window creation popup");
+                    return false; // Strictly disallow popup windows
+                }
             });
 
             // Intercept only HTML embed pages to remove ads/debugger and attach remote controls; let all API/WASM/streams pass natively
             getBridge().setWebViewClient(new com.getcapacitor.BridgeWebViewClient(getBridge()) {
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    String url = request.getUrl().toString();
+                    if (url.startsWith("http://localhost") || url.startsWith("https://localhost") || url.startsWith("capacitor://") || url.contains("lk21") || url.contains("playcdn") || url.contains("videonode") || url.contains("turbovid") || url.contains("gn1r5n") || url.contains("workers.dev")) {
+                        return false;
+                    }
+                    Log.d("LKFlix", "Blocked external popup url: " + url);
+                    return true; // Block and consume
+                }
                 @Override
                 public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                     String url = request.getUrl().toString();
@@ -93,6 +110,8 @@ public class MainActivity extends BridgeActivity {
                             fullHtml = fullHtml.replaceAll("(?i)<script>[\\s\\S]*?devtoolIsOpening[\\s\\S]*?</script>", "<script>window.devtoolIsOpening=function(){};</script>");
                             fullHtml = fullHtml.replace("<a id=\"uyeouyeo\"", "<a id=\"uyeouyeo\" style=\"display:none!important;visibility:hidden!important;pointer-events:none!important;\"");
                             fullHtml = fullHtml.replace("debugger;", "");
+                            fullHtml = fullHtml.replace("window.open", "function(){return null;}//window.open");
+                            fullHtml = fullHtml.replace("target=\"_blank\"", "target=\"_self\"");
 
                             String injectScript = "<script>\n"
                                 + "function triggerToggle() {\n"
