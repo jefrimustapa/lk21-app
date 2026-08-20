@@ -181,13 +181,14 @@
 
     <!-- Movie Detail Full Page -->
     <div class="detail-modal hidden" id="detailModal">
+        <!-- Back button (Always on top and clearly visible in top-left) -->
+        <button class="btn-back-detail" id="closeDetailBtn" tabindex="0">
+            <i class="fa-solid fa-arrow-left"></i> Back
+        </button>
+
         <!-- Cinematic backdrop -->
         <div class="detail-backdrop" id="detailBanner">
             <div class="detail-backdrop-overlay"></div>
-            <!-- Back button -->
-            <button class="btn-back-detail" id="closeDetailBtn" tabindex="0">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </button>
         </div>
         <!-- Poster + Info -->
         <div class="detail-page-content">

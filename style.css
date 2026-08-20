@@ -1466,14 +1466,31 @@ body.tv-mode .detail-backdrop-overlay {
 html.tv-mode .btn-back-detail,
 body.tv-mode .btn-back-detail {
     position: absolute;
-    top: 24px;
-    left: 36px;
-    z-index: 10;
+    top: 20px;
+    left: 48px;
+    z-index: 50;
     font-size: 0.95rem;
-    padding: 8px 18px;
+    font-weight: 700;
+    padding: 8px 20px;
     border-radius: 24px;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(30, 30, 30, 0.85);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #FFF;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.tv-mode .btn-back-detail:focus,
+body.tv-mode .btn-back-detail:focus {
+    background: var(--netflix-red) !important;
+    border-color: #FFF !important;
+    color: #FFF !important;
+    transform: scale(1.08) !important;
+    box-shadow: 0 0 20px rgba(229, 9, 20, 0.8), 0 0 35px rgba(255, 255, 255, 0.4) !important;
+    outline: none !important;
 }
 
 html.tv-mode .detail-page-content,
@@ -1484,7 +1501,7 @@ body.tv-mode .detail-page-content {
     flex-direction: row;
     align-items: flex-start;
     gap: 36px;
-    padding: 24px 48px 8px 48px;
+    padding: 68px 48px 8px 48px;
     margin-top: 0;
     width: 100vw;
     max-width: 100vw;
@@ -1584,8 +1601,13 @@ body.tv-mode .related-section-title {
 }
 
 html.tv-mode .related-movies-scroll,
-body.tv-mode .related-movies-scroll {
-    padding: 4px 2px 12px 2px;
+body.tv-mode .related-movies-scroll,
+html.tv-mode #detailRelatedScroll,
+body.tv-mode #detailRelatedScroll {
+    padding-top: 10px !important;
+    padding-left: 10px !important;
+    padding-bottom: 14px !important;
+    padding-right: 48px !important;
     gap: 16px;
 }
 
