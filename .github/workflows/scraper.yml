@@ -42,9 +42,9 @@ jobs:
         run: |
           python scripts/extract_lk21_links_mv.py --all-urls
 
-      - name: 6. Convert SQLite DB to D1 Clean SQL Dump
+      - name: 6. Convert SQLite DB to D1 Clean SQL Dump (Non-Destructive UPSERT)
         run: |
-          python -c "import sqlite3; conn=sqlite3.connect('lk21_mv_live.db'); f=open('lk21_dump.sql', 'w', encoding='utf-8'); [f.write(line.replace('INSERT INTO', 'INSERT OR REPLACE INTO') + '\n') for line in conn.iterdump() if not line.startswith('BEGIN') and not line.startswith('COMMIT') and not line.startswith('CREATE TABLE') and not line.startswith('CREATE INDEX')]; f.close()"
+            python scripts/export_d1_sql.py lk21_mv_live.db lk21_dump.sql
 
       - name: 7. Sync SQL Dump directly into Remote Cloudflare D1
         env:

@@ -562,7 +562,7 @@ def save_single_item_to_sqlite(item, db_filepath):
 
     cursor.execute("""
         INSERT OR REPLACE INTO movies (
-            title, slug, url, rating, poster_image, type, quality, genres, synopsis, cast, iframe_url, stream_url
+            title, slug, url, rating, poster_image, type, quality, genres, synopsis, "cast", iframe_url, stream_url
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         item.get("title"),
@@ -606,7 +606,7 @@ def save_to_sqlite(items, db_filepath):
             quality TEXT,
             genres TEXT,
             synopsis TEXT,
-            cast TEXT,
+            "cast" TEXT,
             iframe_url TEXT,
             stream_url TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -625,7 +625,7 @@ def save_to_sqlite(items, db_filepath):
 
         cursor.execute("""
             INSERT OR REPLACE INTO movies (
-                title, slug, url, rating, poster_image, type, quality, genres, synopsis, cast, iframe_url, stream_url
+                title, slug, url, rating, poster_image, type, quality, genres, synopsis, "cast", iframe_url, stream_url
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             item.get("title"),
