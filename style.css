@@ -1482,20 +1482,21 @@ body.tv-mode .detail-page-content {
     z-index: 5;
     display: flex;
     flex-direction: row;
-    align-items: center;
-    gap: 40px;
-    padding: 0 48px 36px 48px;
+    align-items: flex-start;
+    gap: 36px;
+    padding: 24px 48px 8px 48px;
     margin-top: 0;
     width: 100vw;
     max-width: 100vw;
-    height: calc(100vh - 70px);
+    height: auto;
+    min-height: auto;
     box-sizing: border-box;
 }
 
 html.tv-mode .detail-poster,
 body.tv-mode .detail-poster {
-    width: 190px;
-    max-height: 285px;
+    width: 180px;
+    max-height: 270px;
     aspect-ratio: 2/3;
     flex-shrink: 0;
     border-radius: 12px;
@@ -1506,16 +1507,16 @@ body.tv-mode .detail-poster {
 html.tv-mode .detail-info,
 body.tv-mode .detail-info {
     flex: 1;
-    max-width: 680px;
+    max-width: 720px;
     padding-top: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 html.tv-mode .detail-title,
 body.tv-mode .detail-title {
-    font-size: 2.1rem;
+    font-size: 2.0rem;
     font-weight: 800;
     margin-bottom: 8px;
     line-height: 1.15;
@@ -1532,11 +1533,11 @@ body.tv-mode .detail-tags {
 html.tv-mode .detail-synopsis,
 body.tv-mode .detail-synopsis {
     font-size: 0.88rem;
-    line-height: 1.45;
-    margin-bottom: 12px;
+    line-height: 1.4;
+    margin-bottom: 10px;
     color: #D1D1D1;
     display: -webkit-box;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1544,7 +1545,7 @@ body.tv-mode .detail-synopsis {
 
 html.tv-mode .detail-meta-grid,
 body.tv-mode .detail-meta-grid {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     gap: 4px;
 }
 
@@ -1555,7 +1556,7 @@ body.tv-mode .detail-info-group {
 
 html.tv-mode .detail-actions,
 body.tv-mode .detail-actions {
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 html.tv-mode .detail-actions .btn,
@@ -1563,6 +1564,29 @@ body.tv-mode .detail-actions .btn {
     padding: 10px 24px;
     font-size: 0.95rem;
     border-radius: 8px;
+}
+
+html.tv-mode .detail-related-section,
+body.tv-mode .detail-related-section {
+    position: relative;
+    z-index: 5;
+    padding: 4px 48px 24px 48px;
+    margin-top: 0;
+    width: 100vw;
+    max-width: 100vw;
+    box-sizing: border-box;
+}
+
+html.tv-mode .related-section-title,
+body.tv-mode .related-section-title {
+    font-size: 1.05rem;
+    margin-bottom: 8px;
+}
+
+html.tv-mode .related-movies-scroll,
+body.tv-mode .related-movies-scroll {
+    padding: 4px 2px 12px 2px;
+    gap: 16px;
 }
 
 /* ==========================================================================
