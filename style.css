@@ -1057,6 +1057,19 @@ body.tv-mode .hero-content {
     transform: scale(1.04);
 }
 
+body.tv-mode .btn-switch-server:focus,
+body.tv-mode .btn-back-player:focus,
+.btn-switch-server:focus-visible,
+.btn-back-player:focus-visible,
+.btn-switch-server:focus,
+.btn-back-player:focus {
+    outline: 3px solid #FFF !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 3px #E50914, 0 0 20px rgba(229, 9, 20, 0.9) !important;
+    background: var(--netflix-red) !important;
+    transform: scale(1.08) !important;
+}
+
 .player-remote-hints {
     display: flex;
     align-items: center;
