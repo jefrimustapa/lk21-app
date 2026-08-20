@@ -29,6 +29,21 @@
                 document.documentElement.classList.add("tv-mode");
                 window._INITIAL_TV_MODE = true;
             }
+
+            // Universal Popup & External Browser Blocker
+            window.open = function() {
+                console.log("[Security] Blocked external popup window.open");
+                return null;
+            };
+
+            document.addEventListener("click", function(e) {
+                var anchor = e.target && e.target.closest ? e.target.closest("a") : null;
+                if (anchor && (anchor.target === "_blank" || (anchor.href && !anchor.href.startsWith(window.location.origin) && !anchor.href.startsWith("javascript:")))) {
+                    console.log("[Security] Blocked external link navigation:", anchor.href);
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, true);
         })();
     </script>
 </head>
@@ -138,14 +153,6 @@
                     <span class="badge type-badge" id="playerType">MOVIE</span>
                 </div>
             </div>
-            <div class="player-server-selector" id="playerServerSelector"></div>
-            <button class="btn-switch-server" id="switchServerBtn" title="Switch to Next Stream Server" tabindex="0">
-                <i class="fa-solid fa-arrows-rotate"></i> <span>Ganti Server</span>
-            </button>
-            <div class="player-remote-hints">
-                <span><i class="fa-solid fa-arrows-left-right"></i> Seek ±10s</span>
-                <span><i class="fa-solid fa-circle-dot"></i> OK / Play</span>
-            </div>
         </div>
 
         <!-- Center Screen Seek Toast / HUD Indicator -->
@@ -157,7 +164,7 @@
     <!-- Full Viewport Embedded Cinema Stream -->
         <div class="player-container">
             <video id="nativeVideoPlayer" class="hidden" controls autoplay playsinline style="width: 100%; height: 100%; object-fit: contain; background: #000;"></video>
-            <iframe id="videoIframe" src="" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="no-referrer"></iframe>
+            <iframe id="videoIframe" src="" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"></iframe>
         </div>
     </div>
 
