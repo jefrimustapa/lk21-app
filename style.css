@@ -1759,6 +1759,35 @@ body.tv-mode .detail-actions .btn {
         display: flex;
     }
 
+    .player-header {
+        height: 58px;
+        padding: 0 12px;
+        gap: 8px;
+    }
+
+    .player-meta-title {
+        margin-left: 8px;
+        gap: 6px;
+    }
+
+    .player-title {
+        font-size: 0.92rem;
+        max-width: 34vw;
+    }
+
+    .btn-back-player {
+        padding: 6px 12px;
+        font-size: 0.82rem;
+        gap: 5px;
+    }
+
+    .btn-switch-server {
+        padding: 6px 11px;
+        font-size: 0.78rem;
+        gap: 6px;
+        margin-right: 0;
+    }
+
     .dpad-controller {
         display: none; /* Hide TV simulator on mobile touch devices */
     }
