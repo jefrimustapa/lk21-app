@@ -1585,14 +1585,8 @@ body.tv-mode .related-section-title {
 
 html.tv-mode .related-movies-scroll,
 body.tv-mode .related-movies-scroll {
-    padding: 6px 2px 14px 2px;
+    padding: 4px 2px 12px 2px;
     gap: 16px;
-}
-
-html.tv-mode .related-movie-card,
-body.tv-mode .related-movie-card {
-    padding-top: 15px;
-    box-sizing: border-box;
 }
 
 /* ==========================================================================
