@@ -283,15 +283,15 @@ body.tv-mode .navbar.sidebar-expanded .genre-nav-bar {
 /* Collapsed Mode (default unfocused) */
 html.tv-mode .genre-item,
 body.tv-mode .genre-item {
-    width: 48px !important;
-    height: 48px !important;
+    width: 40px !important;
+    height: 40px !important;
     margin: 0 auto !important;
     padding: 0 !important;
     box-sizing: border-box;
-    border-radius: 12px;
+    border-radius: 10px;
     background: transparent;
     border: none;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     white-space: nowrap;
     display: flex;
     align-items: center;
@@ -302,7 +302,7 @@ body.tv-mode .genre-item {
 
 html.tv-mode .genre-item i,
 body.tv-mode .genre-item i {
-    font-size: 1.35rem; /* Matches search icon */
+    font-size: 1.2rem; /* Matches search icon */
     width: 100%;
     text-align: center;
     display: flex;
@@ -323,22 +323,22 @@ body.tv-mode .navbar:focus-within .genre-item,
 html.tv-mode .navbar.sidebar-expanded .genre-item,
 body.tv-mode .navbar.sidebar-expanded .genre-item {
     width: 100% !important;
-    height: 48px !important;
-    padding: 0 14px !important;
+    height: 40px !important;
+    padding: 0 12px !important;
     margin: 0 !important;
     box-sizing: border-box !important;
-    border-radius: 12px !important;
+    border-radius: 10px !important;
     justify-content: flex-start !important;
-    gap: 12px;
+    gap: 10px;
 }
 
 html.tv-mode .navbar:focus-within .genre-item i,
 body.tv-mode .navbar:focus-within .genre-item i,
 html.tv-mode .navbar.sidebar-expanded .genre-item i,
 body.tv-mode .navbar.sidebar-expanded .genre-item i {
-    width: 24px !important;
-    min-width: 24px !important;
-    font-size: 1.25rem;
+    width: 22px !important;
+    min-width: 22px !important;
+    font-size: 1.15rem;
     text-align: center;
 }
 
@@ -348,7 +348,7 @@ html.tv-mode .navbar.sidebar-expanded .genre-item span,
 body.tv-mode .navbar.sidebar-expanded .genre-item span {
     display: inline-block !important;
     opacity: 1;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 600;
 }
 
@@ -365,12 +365,12 @@ body.tv-mode .nav-right {
 /* Collapsed Mode - Search Box (exact same width & height as Genre Item) */
 html.tv-mode .search-box,
 body.tv-mode .search-box {
-    width: 48px !important;
-    height: 48px !important;
+    width: 40px !important;
+    height: 40px !important;
     margin: 0 auto !important;
     padding: 0 !important;
     box-sizing: border-box;
-    border-radius: 12px;
+    border-radius: 10px;
     background: rgba(255, 255, 255, 0.08);
     display: flex;
     align-items: center;
@@ -379,7 +379,7 @@ body.tv-mode .search-box {
 
 html.tv-mode .search-icon,
 body.tv-mode .search-icon {
-    font-size: 1.35rem; /* Matches genre icon */
+    font-size: 1.2rem; /* Matches genre icon */
     margin-right: 0;
     display: flex;
     align-items: center;
@@ -399,13 +399,13 @@ body.tv-mode .navbar:focus-within .search-box,
 html.tv-mode .navbar.sidebar-expanded .search-box,
 body.tv-mode .navbar.sidebar-expanded .search-box {
     width: 100% !important;
-    height: 48px !important;
-    padding: 0 14px !important;
+    height: 40px !important;
+    padding: 0 12px !important;
     margin: 0 !important;
     box-sizing: border-box !important;
-    border-radius: 12px !important;
+    border-radius: 10px !important;
     justify-content: flex-start !important;
-    gap: 12px;
+    gap: 10px;
 }
 
 html.tv-mode .navbar:focus-within .search-icon,
@@ -413,9 +413,9 @@ body.tv-mode .navbar:focus-within .search-icon,
 html.tv-mode .navbar.sidebar-expanded .search-icon,
 body.tv-mode .navbar.sidebar-expanded .search-icon {
     margin-right: 0 !important;
-    width: 24px !important;
-    min-width: 24px !important;
-    font-size: 1.25rem !important;
+    width: 22px !important;
+    min-width: 22px !important;
+    font-size: 1.15rem !important;
     text-align: center;
 }
 
@@ -426,7 +426,7 @@ body.tv-mode .navbar.sidebar-expanded #searchInput {
     width: 100%;
     flex: 1;
     opacity: 1;
-    font-size: 0.95rem !important;
+    font-size: 0.9rem !important;
     font-weight: 500;
     color: #FFFFFF;
     background: transparent;
