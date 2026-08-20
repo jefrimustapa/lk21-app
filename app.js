@@ -538,16 +538,28 @@ function updatePlayerServerUI() {
     if (switchBtn) {
         if (!activeServerList || activeServerList.length <= 1) {
             switchBtn.style.display = "none";
+            switchBtn.tabIndex = -1;
         } else {
             switchBtn.style.display = "inline-flex";
+            switchBtn.tabIndex = 0;
         }
-        switchBtn.onclick = () => {
+        switchBtn.onclick = (e) => {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
             if (!activeServerList || activeServerList.length <= 1) {
                 showStreamToast("No alternative server available");
                 return;
             }
             activeServerIndex = (activeServerIndex + 1) % activeServerList.length;
             playCurrentServerStream();
+            showPlayerHeaderTemporarily();
+            setTimeout(() => {
+                if (switchBtn && switchBtn.style.display !== "none") {
+                    switchBtn.focus();
+                }
+            }, 100);
         };
     }
 }
@@ -1438,38 +1450,91 @@ function setupEventListeners() {
         // Handle Android TV Player Remote Controls when video player is open
         if (isPlayerOpen) {
             const key = e.key;
+            const keyCode = e.keyCode;
+            const activeEl = document.activeElement;
+            const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
+            const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
+            const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
 
-            // Re-appear title & close button overlay on any D-Pad key press inside player
+            // Re-appear title & control bar overlay on any D-Pad key press inside player
             showPlayerHeaderTemporarily();
 
-            if (key === "ArrowRight" || e.keyCode === 39) {
+            // 1. Enter / OK / D-Pad Center / Space
+            if (key === "Enter" || keyCode === 13 || keyCode === 23 || keyCode === 66 || key === " " || keyCode === 32) {
                 e.preventDefault();
-                seekPlayerStream(10); // Fast forward +10 sec
-                return;
-            } else if (key === "ArrowLeft" || e.keyCode === 37) {
-                e.preventDefault();
-                seekPlayerStream(-10); // Rewind -10 sec
-                return;
-            } else if (key === "ArrowUp" || e.keyCode === 38) {
-                e.preventDefault();
-                const closeBtn = document.getElementById("closePlayerBtn");
-                if (closeBtn) closeBtn.focus();
-                return;
-            } else if (key === "ArrowDown" || e.keyCode === 40) {
-                e.preventDefault();
-                const nativeVideo = document.getElementById("nativeVideoPlayer");
-                if (nativeVideo) nativeVideo.focus();
-                return;
-            } else if (key === "Enter" || e.keyCode === 13 || e.keyCode === 23 || e.keyCode === 66 || key === " " || e.keyCode === 32) {
-                const activeEl = document.activeElement;
-                if (activeEl && activeEl.id === "closePlayerBtn") {
-                    e.preventDefault();
+                e.stopPropagation();
+                if (isCloseBtn) {
                     closePlayerModal();
                     return;
                 }
-                e.preventDefault();
+                if (isSwitchBtn) {
+                    const switchBtn = document.getElementById("switchServerBtn");
+                    if (switchBtn) switchBtn.click();
+                    return;
+                }
+                // If focus is in video area, toggle play/pause
                 togglePlayerPlayback();
                 return;
+            }
+
+            // 2. Arrow Up: Move focus to the top header controls
+            if (key === "ArrowUp" || keyCode === 38) {
+                e.preventDefault();
+                if (!isHeaderBtnFocused) {
+                    const switchBtn = document.getElementById("switchServerBtn");
+                    const closeBtn = document.getElementById("closePlayerBtn");
+                    if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                        switchBtn.focus();
+                    } else if (closeBtn) {
+                        closeBtn.focus();
+                    }
+                }
+                return;
+            }
+
+            // 3. Arrow Down: Move focus back to the video stream
+            if (key === "ArrowDown" || keyCode === 40) {
+                e.preventDefault();
+                const iframe = document.getElementById("videoIframe");
+                const nativeVideo = document.getElementById("nativeVideoPlayer");
+                if (iframe && !iframe.classList.contains("hidden")) {
+                    iframe.focus();
+                } else if (nativeVideo && !nativeVideo.classList.contains("hidden")) {
+                    nativeVideo.focus();
+                }
+                return;
+            }
+
+            // 4. Arrow Left
+            if (key === "ArrowLeft" || keyCode === 37) {
+                e.preventDefault();
+                if (isSwitchBtn) {
+                    const closeBtn = document.getElementById("closePlayerBtn");
+                    if (closeBtn) closeBtn.focus();
+                    return;
+                } else if (isCloseBtn) {
+                    return;
+                } else {
+                    seekPlayerStream(-10); // Rewind -10 sec
+                    return;
+                }
+            }
+
+            // 5. Arrow Right
+            if (key === "ArrowRight" || keyCode === 39) {
+                e.preventDefault();
+                if (isCloseBtn) {
+                    const switchBtn = document.getElementById("switchServerBtn");
+                    if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                        switchBtn.focus();
+                    }
+                    return;
+                } else if (isSwitchBtn) {
+                    return;
+                } else {
+                    seekPlayerStream(10); // Fast forward +10 sec
+                    return;
+                }
             }
         }
 
