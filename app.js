@@ -534,12 +534,15 @@ function getServerDisplayName(url, index) {
 }
 
 function updatePlayerServerUI() {
-    const container = document.getElementById("playerServerSelector");
     const switchBtn = document.getElementById("switchServerBtn");
-    
     if (switchBtn) {
+        if (!activeServerList || activeServerList.length <= 1) {
+            switchBtn.style.display = "none";
+        } else {
+            switchBtn.style.display = "inline-flex";
+        }
         switchBtn.onclick = () => {
-            if (activeServerList.length <= 1) {
+            if (!activeServerList || activeServerList.length <= 1) {
                 showStreamToast("No alternative server available");
                 return;
             }
@@ -547,29 +550,6 @@ function updatePlayerServerUI() {
             playCurrentServerStream();
         };
     }
-
-    if (!container) return;
-    container.innerHTML = "";
-
-    if (!activeServerList || activeServerList.length <= 1) {
-        container.style.display = "none";
-        return;
-    }
-
-    container.style.display = "flex";
-    activeServerList.forEach((serverUrl, idx) => {
-        const btn = document.createElement("button");
-        btn.className = `server-pill ${idx === activeServerIndex ? "active" : ""}`;
-        btn.innerHTML = `<i class="fa-solid fa-server"></i> ${getServerDisplayName(serverUrl, idx)}`;
-        btn.tabIndex = 0;
-        btn.onclick = () => {
-            if (activeServerIndex !== idx) {
-                activeServerIndex = idx;
-                playCurrentServerStream();
-            }
-        };
-        container.appendChild(btn);
-    });
 }
 
 function playCurrentServerStream() {
