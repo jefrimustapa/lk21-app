@@ -177,9 +177,9 @@ body.tv-mode .navbar {
     width: 90px;
     height: 100vh;
     flex-direction: column;
-    align-items: stretch !important;
+    align-items: center !important;
     justify-content: flex-start;
-    padding: 15px 15px 24px 15px; /* padding-top 15px, left/right 15px */
+    padding: 24px 14px 24px 14px; /* padding-top 24px for top overscan safety */
     z-index: 2000;
     background: rgba(15, 15, 15, 0.25);
     backdrop-filter: blur(16px);
@@ -196,6 +196,7 @@ body.tv-mode .navbar:focus-within,
 html.tv-mode .navbar.sidebar-expanded,
 body.tv-mode .navbar.sidebar-expanded {
     width: 250px !important;
+    align-items: stretch !important;
     background: rgba(12, 12, 12, 0.60) !important;
     box-shadow: 10px 0 40px rgba(0, 0, 0, 0.95);
 }
@@ -203,20 +204,35 @@ body.tv-mode .navbar.sidebar-expanded {
 html.tv-mode .nav-left,
 body.tv-mode .nav-left {
     flex-direction: column;
-    align-items: stretch !important;
-    gap: 15px; /* Reduced vertical gap to 15px */
+    align-items: center !important;
+    gap: 15px;
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box;
+}
+
+html.tv-mode .navbar:focus-within .nav-left,
+body.tv-mode .navbar:focus-within .nav-left,
+html.tv-mode .navbar.sidebar-expanded .nav-left,
+body.tv-mode .navbar.sidebar-expanded .nav-left {
+    align-items: stretch !important;
 }
 
 html.tv-mode .brand,
 body.tv-mode .brand {
     display: flex;
     align-items: center;
-    height: 40px;
-    padding-left: 2px;
+    justify-content: center;
+    width: 100%;
+    height: 48px;
+    padding-left: 0;
     white-space: nowrap;
+    margin-bottom: 4px;
+}
+
+html.tv-mode .brand-square-badge,
+body.tv-mode .brand-square-badge {
+    margin: 0 auto;
 }
 
 html.tv-mode .brand-text,
@@ -229,52 +245,90 @@ html.tv-mode .genre-nav-bar,
 body.tv-mode .genre-nav-bar {
     display: flex !important;
     flex-direction: column;
-    align-items: stretch !important;
-    gap: 12px;
+    align-items: center !important;
+    gap: 10px;
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 10px 0 0 0; /* padding-top 10px */
+    padding: 6px 0 0 0;
     margin: 0;
+}
+
+html.tv-mode .navbar:focus-within .genre-nav-bar,
+body.tv-mode .navbar:focus-within .genre-nav-bar,
+html.tv-mode .navbar.sidebar-expanded .genre-nav-bar,
+body.tv-mode .navbar.sidebar-expanded .genre-nav-bar {
+    align-items: stretch !important;
 }
 
 html.tv-mode .genre-item,
 body.tv-mode .genre-item {
-    width: calc(100% - 14px) !important; /* Left offset 7px + right inset 7px = total stretch minus 14px */
-    margin-left: 7px; /* Offset +7px on left */
-    margin-right: 7px; /* 7px inset on right */
+    width: 50px !important;
+    height: 50px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
     box-sizing: border-box;
-    padding: 10px 14px;
-    border-radius: 8px;
+    border-radius: 12px;
     background: transparent;
     border: none;
     font-size: 0.95rem;
     white-space: nowrap;
-    justify-content: flex-start;
     display: flex;
     align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 html.tv-mode .genre-item i,
 body.tv-mode .genre-item i {
-    font-size: 1.2rem;
-    min-width: 24px;
+    font-size: 1.35rem; /* Bigger crisp TV navbar icon */
+    width: 100%;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 html.tv-mode .genre-item span,
 body.tv-mode .genre-item span {
+    display: none;
     opacity: 0;
     transition: opacity 0.2s ease;
+}
+
+html.tv-mode .navbar:focus-within .genre-item,
+body.tv-mode .navbar:focus-within .genre-item,
+html.tv-mode .navbar.sidebar-expanded .genre-item,
+body.tv-mode .navbar.sidebar-expanded .genre-item {
+    width: 100% !important;
+    height: 48px !important;
+    padding: 0 16px !important;
+    margin: 0 !important;
+    justify-content: flex-start !important;
+    gap: 14px;
+}
+
+html.tv-mode .navbar:focus-within .genre-item i,
+body.tv-mode .navbar:focus-within .genre-item i,
+html.tv-mode .navbar.sidebar-expanded .genre-item i,
+body.tv-mode .navbar.sidebar-expanded .genre-item i {
+    width: 28px !important;
+    min-width: 28px !important;
+    font-size: 1.35rem;
+    text-align: center;
 }
 
 html.tv-mode .navbar:focus-within .genre-item span,
 body.tv-mode .navbar:focus-within .genre-item span,
 html.tv-mode .navbar.sidebar-expanded .genre-item span,
 body.tv-mode .navbar.sidebar-expanded .genre-item span {
+    display: inline-block !important;
     opacity: 1;
+    font-size: 1.0rem;
+    font-weight: 600;
 }
 
 html.tv-mode .nav-right,
@@ -289,20 +343,25 @@ body.tv-mode .nav-right {
 
 html.tv-mode .search-box,
 body.tv-mode .search-box {
-    width: 100% !important;
-    max-width: 100% !important;
+    width: 50px !important;
+    height: 50px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
     box-sizing: border-box;
-    padding: 10px 14px;
-    border-radius: 8px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.08);
     display: flex;
     align-items: center;
+    justify-content: center;
 }
 
 html.tv-mode .search-icon,
 body.tv-mode .search-icon {
-    font-size: 1.1rem;
-    margin-right: 8px;
+    font-size: 1.35rem; /* Bigger crisp TV search icon */
+    margin-right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 html.tv-mode #searchInput,
@@ -310,6 +369,24 @@ body.tv-mode #searchInput {
     width: 0;
     opacity: 0;
     transition: width 0.25s ease, opacity 0.2s ease;
+}
+
+html.tv-mode .navbar:focus-within .search-box,
+body.tv-mode .navbar:focus-within .search-box,
+html.tv-mode .navbar.sidebar-expanded .search-box,
+body.tv-mode .navbar.sidebar-expanded .search-box {
+    width: 100% !important;
+    height: 48px !important;
+    padding: 0 14px !important;
+    justify-content: flex-start !important;
+}
+
+html.tv-mode .navbar:focus-within .search-icon,
+body.tv-mode .navbar:focus-within .search-icon,
+html.tv-mode .navbar.sidebar-expanded .search-icon,
+body.tv-mode .navbar.sidebar-expanded .search-icon {
+    margin-right: 10px !important;
+    font-size: 1.25rem !important;
 }
 
 html.tv-mode .navbar:focus-within #searchInput,
@@ -560,15 +637,32 @@ body.tv-mode .btn-close-detail:focus {
     transition: background-image 0.8s ease-in-out;
 }
 
-body.tv-mode .hero-billboard {
+body.tv-mode .hero-billboard,
+html.tv-mode .hero-billboard {
     height: 65vh;
     min-height: 440px;
     padding-left: 5%;
     margin-bottom: 0px;
 }
 
-body.tv-mode .hero-content {
+body.tv-mode .hero-content,
+html.tv-mode .hero-content {
     margin-top: 20px;
+}
+
+body.tv-mode .hero-title,
+html.tv-mode .hero-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+}
+
+body.tv-mode .hero-meta,
+html.tv-mode .hero-meta {
+    margin-bottom: 12px;
+    gap: 8px;
 }
 
 .hero-indicators {
