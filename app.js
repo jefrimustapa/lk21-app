@@ -747,6 +747,30 @@ async function resolveWebDynamicStreams(movie) {
     }
 }
 
+function checkAndApplyPlayerTitleMarquee() {
+    const titleEl = document.getElementById("playerTitle");
+    if (!titleEl) return;
+    const parentBox = titleEl.closest(".player-title-box") || titleEl.parentElement;
+    if (!parentBox) return;
+
+    // Reset marquee to measure natural scrollWidth accurately
+    titleEl.classList.remove("marquee");
+    titleEl.style.removeProperty("--marquee-distance");
+
+    // Allow browser layout and font rendering to settle before measurement
+    requestAnimationFrame(() => {
+        const containerWidth = parentBox.clientWidth;
+        const textWidth = titleEl.scrollWidth;
+        
+        // Strictly only apply marquee animation if the title text does not fit inside the container
+        if (containerWidth > 0 && textWidth > containerWidth + 2) {
+            const overflowPx = textWidth - containerWidth;
+            titleEl.style.setProperty("--marquee-distance", `-${overflowPx + 20}px`);
+            titleEl.classList.add("marquee");
+        }
+    });
+}
+
 function openPlayerModal(movie) {
     const modal = document.getElementById("playerModal");
     activeMovieForPlayer = movie;
@@ -754,17 +778,8 @@ function openPlayerModal(movie) {
     const titleEl = document.getElementById("playerTitle");
     if (titleEl) {
         titleEl.textContent = movie.title || "Now Playing";
-        titleEl.classList.remove("marquee");
-        titleEl.style.removeProperty("--marquee-distance");
-        setTimeout(() => {
-            const parentBox = titleEl.closest(".player-title-box") || titleEl.parentElement;
-            const containerWidth = parentBox ? parentBox.clientWidth : titleEl.clientWidth;
-            if (titleEl.scrollWidth > containerWidth + 4) {
-                const overflowPx = titleEl.scrollWidth - containerWidth;
-                titleEl.style.setProperty("--marquee-distance", `-${overflowPx + 16}px`);
-                titleEl.classList.add("marquee");
-            }
-        }, 150);
+        setTimeout(checkAndApplyPlayerTitleMarquee, 100);
+        setTimeout(checkAndApplyPlayerTitleMarquee, 350);
     }
 
     const qualityEl = document.getElementById("playerQuality");
@@ -1523,5 +1538,11 @@ function setupEventListeners() {
         } else {
             nav.classList.remove("scrolled");
         }
+    });
+
+    // Recalculate title marquee on window resize or rotation
+    window.addEventListener("resize", checkAndApplyPlayerTitleMarquee);
+    window.addEventListener("orientationchange", () => {
+        setTimeout(checkAndApplyPlayerTitleMarquee, 200);
     });
 }
