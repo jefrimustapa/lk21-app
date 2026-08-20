@@ -948,23 +948,46 @@ body.tv-mode .hero-content {
     align-items: center;
     gap: 12px;
     flex: 1;
-    margin-left: 20px;
+    min-width: 0;
+    margin-left: 16px;
+    overflow: hidden;
+}
+
+.player-title-box {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
 }
 
 .player-title {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: #FFF;
     text-shadow: 0 2px 6px rgba(0,0,0,0.9);
-    max-width: 50vw;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: inline-block;
+    will-change: transform;
+}
+
+.player-title.marquee {
+    animation: titleMarquee 8s ease-in-out infinite alternate;
+}
+
+@keyframes titleMarquee {
+    0%, 25% {
+        transform: translateX(0);
+    }
+    75%, 100% {
+        transform: translateX(var(--marquee-distance, -50px));
+    }
 }
 
 .player-badges {
     display: flex;
     gap: 6px;
+    flex-shrink: 0;
 }
 
 .player-server-selector {
@@ -1760,50 +1783,46 @@ body.tv-mode .detail-actions .btn {
     }
 
     .player-header {
-        height: auto;
-        min-height: 58px;
-        padding: 10px 14px 18px;
-        flex-wrap: wrap;
-        gap: 8px 12px;
+        height: 56px;
+        padding: 0 10px;
+        flex-wrap: nowrap;
+        gap: 8px;
         align-items: center;
-        background: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.75) 75%, rgba(0, 0, 0, 0) 100%);
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.5) 60%, rgba(0, 0, 0, 0) 100%);
     }
 
     .player-meta-title {
-        margin-left: 0;
-        flex: 1 1 200px;
+        margin-left: 6px;
+        flex: 1;
         min-width: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
+        gap: 6px;
+        overflow: hidden;
+    }
+
+    .player-title-box {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
     }
 
     .player-title {
-        font-size: 0.96rem;
-        font-weight: 700;
-        max-width: 100%;
-        white-space: normal;
-        overflow: visible;
-        text-overflow: unset;
-        line-height: 1.25;
-        word-break: break-word;
+        font-size: 0.92rem;
     }
 
     .btn-back-player {
-        padding: 7px 14px;
-        font-size: 0.85rem;
-        gap: 6px;
+        padding: 6px 12px;
+        font-size: 0.82rem;
+        gap: 5px;
         flex-shrink: 0;
     }
 
     .btn-switch-server {
-        padding: 7px 13px;
-        font-size: 0.82rem;
-        gap: 6px;
+        padding: 6px 11px;
+        font-size: 0.78rem;
+        gap: 5px;
         margin-right: 0;
         flex-shrink: 0;
-        margin-left: auto;
+        margin-left: 0;
     }
 
     .dpad-controller {

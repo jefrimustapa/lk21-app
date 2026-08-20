@@ -752,7 +752,20 @@ function openPlayerModal(movie) {
     activeMovieForPlayer = movie;
     
     const titleEl = document.getElementById("playerTitle");
-    if (titleEl) titleEl.textContent = movie.title || "Now Playing";
+    if (titleEl) {
+        titleEl.textContent = movie.title || "Now Playing";
+        titleEl.classList.remove("marquee");
+        titleEl.style.removeProperty("--marquee-distance");
+        setTimeout(() => {
+            const parentBox = titleEl.closest(".player-title-box") || titleEl.parentElement;
+            const containerWidth = parentBox ? parentBox.clientWidth : titleEl.clientWidth;
+            if (titleEl.scrollWidth > containerWidth + 4) {
+                const overflowPx = titleEl.scrollWidth - containerWidth;
+                titleEl.style.setProperty("--marquee-distance", `-${overflowPx + 16}px`);
+                titleEl.classList.add("marquee");
+            }
+        }, 150);
+    }
 
     const qualityEl = document.getElementById("playerQuality");
     if (qualityEl) qualityEl.textContent = movie.quality || "HD";
