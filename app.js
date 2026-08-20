@@ -939,7 +939,7 @@ function showTvCursor(preservePosition = false) {
     if (isTv) {
         cursor.classList.remove("hidden");
         cursor.style.opacity = "1";
-        if (!preservePosition || !tvCursorX || !tvCursorY) {
+        if (!preservePosition || !tvCursorX || !tvCursorY || tvCursorY < 120) {
             // Position near center / play button
             updateTvCursorPosition(window.innerWidth / 2, window.innerHeight / 2);
         } else {
@@ -1614,15 +1614,16 @@ function setupEventListeners() {
                 if (key === "ArrowDown" || keyCode === 40) {
                     e.preventDefault();
                     if (activeEl) activeEl.blur();
-                    const iframe = document.getElementById("videoIframe");
-                    const nativeVideo = document.getElementById("nativeVideoPlayer");
-                    if (iframe && !iframe.classList.contains("hidden")) {
-                        iframe.focus();
-                        if (isTv && !isStreamLoaded) {
-                            showTvCursor();
+                    if (isTv) {
+                        window.focus();
+                        if (!isStreamLoaded) {
+                            showTvCursor(true);
                         }
-                    } else if (nativeVideo && !nativeVideo.classList.contains("hidden")) {
-                        nativeVideo.focus();
+                    } else {
+                        const iframe = document.getElementById("videoIframe");
+                        const nativeVideo = document.getElementById("nativeVideoPlayer");
+                        if (iframe && !iframe.classList.contains("hidden")) iframe.focus();
+                        else if (nativeVideo && !nativeVideo.classList.contains("hidden")) nativeVideo.focus();
                     }
                     return;
                 }
