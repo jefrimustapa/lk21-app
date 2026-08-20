@@ -173,6 +173,12 @@ public class MainActivity extends BridgeActivity {
                                 + "  else if (e.keyCode === 39) { handleRemoteSeek(10); }\n"
                                 + "  else if (e.keyCode === 13 || e.keyCode === 23 || e.keyCode === 66 || e.keyCode === 32) { triggerToggle(); }\n"
                                 + "});\n"
+                                + "document.addEventListener('touchstart', function() {\n"
+                                + "  try { window.parent.postMessage(JSON.stringify({ type: 'userActivity' }), '*'); } catch(err){}\n"
+                                + "}, { passive: true });\n"
+                                + "document.addEventListener('click', function() {\n"
+                                + "  try { window.parent.postMessage(JSON.stringify({ type: 'userActivity' }), '*'); } catch(err){}\n"
+                                + "}, true);\n"
                                 + "</script>\n";
 
                             if (fullHtml.contains("</body>")) {

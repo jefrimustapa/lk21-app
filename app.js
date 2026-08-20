@@ -697,13 +697,15 @@ function tryNextServerFallback() {
     }
 }
 
-// Global listener for postMessage errors from player iframes
+// Global listener for postMessage events and errors from player iframes
 window.addEventListener("message", (event) => {
     try {
         const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
         if (data && (data.event === "error" || data.status === "error" || data.type === "error" || data.error)) {
             console.warn("[StreamEngine] Received error message from embedded player:", data);
             tryNextServerFallback();
+        } else if (data && (data.type === "userActivity" || data.event === "click" || data.type === "tap" || data.type === "play" || data.type === "pause")) {
+            showPlayerHeaderTemporarily();
         }
     } catch (e) {}
 });
@@ -836,12 +838,17 @@ function openPlayerModal(movie) {
 
     modal.classList.remove("hidden");
     
-    // Auto hide top header overlay over stream after 4 seconds of inactivity
+    // Auto hide top header overlay over stream after 10 seconds of inactivity
     showPlayerHeaderTemporarily();
 
-    // Re-show header when user touches screen or moves mouse/TV remote over player modal
-    modal.onmousemove = showPlayerHeaderTemporarily;
-    modal.ontouchstart = showPlayerHeaderTemporarily;
+    // Re-show header when user touches screen, taps, or moves mouse/TV remote over player modal
+    ["touchstart", "touchend", "touchmove", "pointerdown", "pointerup", "pointermove", "mousemove", "mousedown", "click"].forEach((evtName) => {
+        modal.addEventListener(evtName, () => {
+            if (!modal.classList.contains("hidden")) {
+                showPlayerHeaderTemporarily();
+            }
+        }, { passive: true, capture: true });
+    });
 
     // Push history state so Android hardware back button / browser back closes player & returns to detail/catalog
     history.pushState({ modalOpen: "player" }, "");
