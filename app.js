@@ -1027,6 +1027,15 @@ function openDetailModal(movie) {
         // Do NOT close detail modal so it remains directly underneath the player view
         openPlayerModal(movie);
     };
+    playBtn.onfocus = () => {
+        const isTv = document.documentElement.classList.contains("tv-mode") || document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
+        if (isTv && modal) {
+            modal.scrollTop = 0;
+            if (typeof modal.scrollTo === "function") {
+                modal.scrollTo({ top: 0, behavior: "smooth" });
+            }
+        }
+    };
 
     const posterCard = document.getElementById("detailPoster");
     if (posterCard) {
@@ -1279,20 +1288,50 @@ function navigateDpad(direction) {
     const playerModal = document.getElementById("playerModal");
     const isPlayerOpen = playerModal && !playerModal.classList.contains("hidden");
 
-    // If inside detail page, handle direct UP/DOWN/LEFT/RIGHT between Back and Watch Now
+    // If inside detail page, handle direct navigation between Back, Poster, Watch Now, and Related Cards
     if (isDetailOpen) {
         const backBtn = document.getElementById("closeDetailBtn");
         const playBtn = document.getElementById("detailPlayBtn");
+        const posterEl = document.getElementById("detailPoster");
 
-        if (direction === "DOWN" || direction === "RIGHT") {
-            if (currentEl === backBtn && playBtn) {
-                playBtn.focus();
+        if (currentEl === backBtn) {
+            if (direction === "DOWN" || direction === "RIGHT") {
+                if (playBtn) playBtn.focus();
                 return;
             }
-        } else if (direction === "UP" || direction === "LEFT") {
-            if (currentEl === playBtn && backBtn) {
-                backBtn.focus();
+        } else if (currentEl === playBtn) {
+            if (direction === "UP") {
+                if (backBtn) backBtn.focus();
                 return;
+            } else if (direction === "LEFT") {
+                if (posterEl) posterEl.focus();
+                else if (backBtn) backBtn.focus();
+                return;
+            } else if (direction === "DOWN") {
+                const firstRelated = document.querySelector("#detailRelatedScroll .related-movie-card");
+                if (firstRelated) {
+                    firstRelated.focus();
+                    return;
+                }
+            }
+        } else if (currentEl === posterEl) {
+            if (direction === "UP" || direction === "LEFT") {
+                if (backBtn) backBtn.focus();
+                return;
+            } else if (direction === "RIGHT" || direction === "DOWN") {
+                if (playBtn) playBtn.focus();
+                return;
+            }
+        } else if (currentEl && currentEl.classList.contains("related-movie-card")) {
+            if (direction === "UP") {
+                if (playBtn) {
+                    playBtn.focus();
+                    if (detailModal) {
+                        detailModal.scrollTop = 0;
+                        if (typeof detailModal.scrollTo === "function") detailModal.scrollTo({ top: 0, behavior: "smooth" });
+                    }
+                    return;
+                }
             }
         }
     }
