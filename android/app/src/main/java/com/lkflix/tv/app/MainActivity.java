@@ -3,6 +3,8 @@ package com.lkflix.tv.app;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
+import android.os.SystemClock;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
@@ -243,6 +245,41 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public String getDeviceInfo() {
             return "TV=" + nativeIsTv + " | Device=" + android.os.Build.MODEL + " | Android=" + android.os.Build.VERSION.RELEASE;
+        }
+
+        @JavascriptInterface
+        public void simulateNativeTouchNormalized(final float normX, final float normY) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        final WebView webView = getBridge().getWebView();
+                        if (webView != null) {
+                            final int width = webView.getWidth();
+                            final int height = webView.getHeight();
+                            final float actualX = normX * width;
+                            final float actualY = normY * height;
+                            final long downTime = SystemClock.uptimeMillis();
+
+                            MotionEvent downEvent = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, actualX, actualY, 0);
+                            webView.dispatchTouchEvent(downEvent);
+                            downEvent.recycle();
+
+                            webView.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    long upTime = SystemClock.uptimeMillis();
+                                    MotionEvent upEvent = MotionEvent.obtain(downTime, upTime, MotionEvent.ACTION_UP, actualX, actualY, 0);
+                                    webView.dispatchTouchEvent(upEvent);
+                                    upEvent.recycle();
+                                }
+                            }, 100);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error in simulateNativeTouchNormalized: " + e.getMessage());
+                    }
+                }
+            });
         }
 
         @JavascriptInterface

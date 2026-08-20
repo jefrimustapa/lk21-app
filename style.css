@@ -1917,3 +1917,57 @@ body.tv-mode .detail-actions .btn {
         font-size: 0.85rem;
     }
 }
+
+/* ==========================================================================
+   TV Remote Virtual Cursor (Active strictly on TV inside stream player)
+   ========================================================================== */
+.tv-virtual-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 44px;
+    height: 44px;
+    margin-top: -22px;
+    margin-left: -22px;
+    pointer-events: none;
+    z-index: 9999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+    will-change: transform;
+}
+
+.tv-cursor-pointer {
+    width: 12px;
+    height: 12px;
+    background: #FFFFFF;
+    border-radius: 50%;
+    box-shadow: 0 0 12px #E50914, 0 0 24px #FFFFFF;
+}
+
+.tv-cursor-ring {
+    position: absolute;
+    width: 38px;
+    height: 38px;
+    border: 2.5px solid #E50914;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(229, 9, 20, 0.7);
+    animation: tvCursorPulse 1.4s infinite ease-in-out;
+}
+
+@keyframes tvCursorPulse {
+    0%, 100% { transform: scale(1); opacity: 0.95; }
+    50% { transform: scale(1.35); opacity: 0.45; }
+}
+
+.tv-virtual-cursor.clicking .tv-cursor-ring {
+    transform: scale(0.65) !important;
+    border-color: #FFFFFF !important;
+    background: rgba(229, 9, 20, 0.85) !important;
+}
+
+.tv-virtual-cursor.clicking .tv-cursor-pointer {
+    transform: scale(1.4) !important;
+    background: #FFDD00 !important;
+}
