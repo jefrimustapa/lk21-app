@@ -1117,7 +1117,7 @@ html.tv-mode .catalog-section {
     flex: 1;
     min-width: 0;
     margin-left: 20px;
-    margin-right: 32px; /* Bigger gap between movie label and server button */
+    margin-right: 12px; /* Reduced gap between movie identifier and server button */
     overflow: hidden;
 }
 
@@ -1215,7 +1215,7 @@ html.tv-mode .catalog-section {
     font-weight: 700;
     cursor: pointer;
     outline: none;
-    margin-left: 20px; /* Generous gap from movie title/badges */
+    margin-left: 10px;
     margin-right: 12px;
     white-space: nowrap;
     transition: all 0.2s ease;
