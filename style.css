@@ -373,11 +373,11 @@ body.tv-mode .nav-right {
     padding-left: 2px;
 }
 
-/* Collapsed Mode - Search Box (exact same width & height as Genre Item) */
+/* Collapsed Mode - Search Box */
 html.tv-mode .search-box,
 body.tv-mode .search-box {
-    width: 40px !important;
-    height: 40px !important;
+    width: 44px !important;
+    height: 46px !important;
     margin: 0 auto !important;
     padding: 0 !important;
     box-sizing: border-box;
@@ -404,13 +404,13 @@ body.tv-mode #searchInput {
     transition: width 0.25s ease, opacity 0.2s ease;
 }
 
-/* Expanded Mode - Search Box (exact same width & height as Genre Item) */
+/* Expanded Mode - Search Box */
 html.tv-mode .navbar:focus-within .search-box,
 body.tv-mode .navbar:focus-within .search-box,
 html.tv-mode .navbar.sidebar-expanded .search-box,
 body.tv-mode .navbar.sidebar-expanded .search-box {
     width: calc(100% - 16px) !important;
-    height: 40px !important;
+    height: 46px !important;
     padding: 0 12px !important;
     margin: 0 auto !important;
     box-sizing: border-box !important;
