@@ -891,22 +891,20 @@ function openPlayerModal(movie) {
     history.pushState({ modalOpen: "player" }, "");
     refreshFocusableElements();
     
-    const iframe = document.getElementById("videoIframe");
-    const nativeVideo = document.getElementById("nativeVideoPlayer");
-
-    // Automatically focus the stream player container so D-Pad and remote controls immediately interact with the stream
-    setTimeout(() => {
-        if (iframe && !iframe.classList.contains("hidden")) {
-            iframe.focus();
-            try {
-                if (iframe.contentWindow) {
-                    iframe.contentWindow.focus();
-                }
-            } catch(e){}
-        } else if (nativeVideo && !nativeVideo.classList.contains("hidden")) {
-            nativeVideo.focus();
-        }
-    }, 200);
+    const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
+    if (isTv) {
+        showTvCursor();
+    } else {
+        const iframe = document.getElementById("videoIframe");
+        const nativeVideo = document.getElementById("nativeVideoPlayer");
+        setTimeout(() => {
+            if (iframe && !iframe.classList.contains("hidden")) {
+                iframe.focus();
+            } else if (nativeVideo && !nativeVideo.classList.contains("hidden")) {
+                nativeVideo.focus();
+            }
+        }, 200);
+    }
 }
 
 let tvCursorX = 0;
@@ -933,7 +931,7 @@ function updateTvCursorPosition(newX, newY) {
     resetTvCursorHideTimer();
 }
 
-function showTvCursor() {
+function showTvCursor(preservePosition = false) {
     if (isStreamLoaded) return; // Do not show cursor if stream has already loaded/playing
     const cursor = document.getElementById("tvVirtualCursor");
     if (!cursor) return;
@@ -941,8 +939,12 @@ function showTvCursor() {
     if (isTv) {
         cursor.classList.remove("hidden");
         cursor.style.opacity = "1";
-        // Position near center / play button
-        updateTvCursorPosition(window.innerWidth / 2, window.innerHeight / 2);
+        if (!preservePosition || !tvCursorX || !tvCursorY) {
+            // Position near center / play button
+            updateTvCursorPosition(window.innerWidth / 2, window.innerHeight / 2);
+        } else {
+            updateTvCursorPosition(tvCursorX, tvCursorY);
+        }
     } else {
         cursor.classList.add("hidden");
     }
@@ -1614,8 +1616,14 @@ function setupEventListeners() {
                     if (activeEl) activeEl.blur();
                     const iframe = document.getElementById("videoIframe");
                     const nativeVideo = document.getElementById("nativeVideoPlayer");
-                    if (iframe && !iframe.classList.contains("hidden")) iframe.focus();
-                    else if (nativeVideo && !nativeVideo.classList.contains("hidden")) nativeVideo.focus();
+                    if (iframe && !iframe.classList.contains("hidden")) {
+                        iframe.focus();
+                        if (isTv && !isStreamLoaded) {
+                            showTvCursor();
+                        }
+                    } else if (nativeVideo && !nativeVideo.classList.contains("hidden")) {
+                        nativeVideo.focus();
+                    }
                     return;
                 }
 
@@ -1625,27 +1633,32 @@ function setupEventListeners() {
                 }
             }
 
-            // === 3. VIRTUAL POINTER MODE (ONLY BEFORE STREAM HAS LOADED / PLAYED) ===
+            // === 3. VIRTUAL POINTER MODE (ONLY BEFORE STREAM HAS LOADED / BOT VERIFICATION) ===
             if (isTv && !isStreamLoaded) {
                 const cursorEl = document.getElementById("tvVirtualCursor");
-                const isCursorVisible = cursorEl && !cursorEl.classList.contains("hidden") && cursorEl.style.opacity !== "0";
+                let isCursorVisible = cursorEl && !cursorEl.classList.contains("hidden") && cursorEl.style.opacity !== "0";
 
-                // If pointer is hidden before stream loads, pressing DOWN brings it back
-                if (!isCursorVisible && (key === "ArrowDown" || keyCode === 40)) {
-                    e.preventDefault();
-                    showTvCursor();
-                    return;
+                const step = 45; // Pixels per D-Pad press
+
+                // If pointer is hidden/inactive before stream loads, ANY D-pad direction brings it back immediately
+                if (!isCursorVisible) {
+                    if (key === "ArrowUp" || keyCode === 38 ||
+                        key === "ArrowDown" || keyCode === 40 ||
+                        key === "ArrowLeft" || keyCode === 37 ||
+                        key === "ArrowRight" || keyCode === 39) {
+                        e.preventDefault();
+                        showTvCursor();
+                        isCursorVisible = true;
+                    }
                 }
 
                 if (isCursorVisible) {
-                    const step = 45; // Pixels per D-Pad press
-
                     if (key === "ArrowUp" || keyCode === 38) {
                         e.preventDefault();
                         if (tvCursorY - step < 80) {
                             const switchBtn = document.getElementById("switchServerBtn");
                             const closeBtn = document.getElementById("closePlayerBtn");
-                            if (switchBtn && switchBtn.style.display !== "none") switchBtn.focus();
+                            if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) switchBtn.focus();
                             else if (closeBtn) closeBtn.focus();
                             hideTvCursor();
                             return;
@@ -1691,9 +1704,7 @@ function setupEventListeners() {
                         } else {
                             togglePlayerPlayback();
                         }
-                        isStreamLoaded = true;
-                        isStreamPlaying = true;
-                        setTimeout(() => hideTvCursor(), 800);
+                        resetTvCursorHideTimer();
                         return;
                     }
                 }
