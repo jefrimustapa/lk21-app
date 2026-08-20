@@ -322,10 +322,10 @@ html.tv-mode .navbar:focus-within .genre-item,
 body.tv-mode .navbar:focus-within .genre-item,
 html.tv-mode .navbar.sidebar-expanded .genre-item,
 body.tv-mode .navbar.sidebar-expanded .genre-item {
-    width: 100% !important;
+    width: calc(100% - 16px) !important;
     height: 40px !important;
     padding: 0 12px !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     box-sizing: border-box !important;
     border-radius: 10px !important;
     justify-content: flex-start !important;
@@ -350,6 +350,7 @@ body.tv-mode .navbar.sidebar-expanded .genre-item span {
     opacity: 1;
     font-size: 0.9rem;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 html.tv-mode .nav-right,
@@ -398,10 +399,10 @@ html.tv-mode .navbar:focus-within .search-box,
 body.tv-mode .navbar:focus-within .search-box,
 html.tv-mode .navbar.sidebar-expanded .search-box,
 body.tv-mode .navbar.sidebar-expanded .search-box {
-    width: 100% !important;
+    width: calc(100% - 16px) !important;
     height: 40px !important;
     padding: 0 12px !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     box-sizing: border-box !important;
     border-radius: 10px !important;
     justify-content: flex-start !important;
@@ -430,6 +431,14 @@ body.tv-mode .navbar.sidebar-expanded #searchInput {
     font-weight: 500;
     color: #FFFFFF;
     background: transparent;
+}
+
+html.tv-mode .navbar .genre-item:focus,
+body.tv-mode .navbar .genre-item:focus,
+html.tv-mode .navbar .search-box:focus,
+body.tv-mode .navbar .search-box:focus {
+    transform: none !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 4px 14px rgba(229, 9, 20, 0.6) !important;
 }
 
 html.tv-mode .device-badge,
