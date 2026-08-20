@@ -51,7 +51,6 @@ public class MainActivity extends BridgeActivity {
 
             settings.setSupportMultipleWindows(false);
             settings.setJavaScriptCanOpenWindowsAutomatically(false);
-            settings.setMediaPlaybackRequiresUserGesture(false);
             settings.setUserAgentString("Mozilla/5.0 (Linux; Android 9; MiBOX4 Build/PI; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36");
 
             webView.setWebChromeClient(new android.webkit.WebChromeClient() {
@@ -83,8 +82,8 @@ public class MainActivity extends BridgeActivity {
                     String url = request.getUrl().toString();
                     String method = request.getMethod();
                     
-                    // Only intercept top-level GET HTML stream embed pages (video.php, iframe, videonode, playcdn, turbovid, abyss, hydrax)
-                    if ("GET".equalsIgnoreCase(method) && (url.contains("video.php") || url.contains("/iframe/") || url.contains("videonode") || url.contains("turbovid") || url.contains("playcdn") || url.contains("abyssplayer") || url.contains("hydrax") || url.contains("filelions") || url.contains("gn1r5n") || url.contains("embed"))) {
+                    // Only intercept top-level GET HTML pages (video.php / iframe)
+                    if ("GET".equalsIgnoreCase(method) && (url.contains("video.php") || url.contains("/iframe/"))) {
                         try {
                             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                             conn.setRequestMethod("GET");
@@ -115,50 +114,13 @@ public class MainActivity extends BridgeActivity {
                             fullHtml = fullHtml.replace("target=\"_blank\"", "target=\"_self\"");
 
                             String injectScript = "<script>\n"
-                                + "function autoBypassVerificationAndPlay() {\n"
-                                + "  try {\n"
-                                + "    var selectors = [\n"
-                                + "      'button#btn-play', 'button.play', '#play_btn', '.play-btn', '#playbtn',\n"
-                                + "      '#btn-start', '.btn-start', '#overlay-play', '#player-overlay', '#player_overlay',\n"
-                                + "      '.jw-display-icon-display', '.jw-display-icon-container', '.jw-preview',\n"
-                                + "      '.vjs-big-play-button', 'button[type=\"submit\"]', '.btn-primary', '.btn-danger',\n"
-                                + "      '.btn-success', '#verify', '#human', '#robot', '.robot', '[data-action=\"play\"]',\n"
-                                + "      'div[id*=\"play\"]', 'div[class*=\"play-btn\"]', 'a[href*=\"play\"]',\n"
-                                + "      '#start', '.start', '#click-to-play', '.click-to-play', 'button'\n"
-                                + "    ];\n"
-                                + "    for (var i = 0; i < selectors.length; i++) {\n"
-                                + "      var els = document.querySelectorAll(selectors[i]);\n"
-                                + "      for (var j = 0; j < els.length; j++) {\n"
-                                + "        var el = els[j];\n"
-                                + "        if (el && (el.offsetWidth > 0 || el.offsetHeight > 0 || (el.getClientRects && el.getClientRects().length > 0))) {\n"
-                                + "          try {\n"
-                                + "            el.click();\n"
-                                + "            el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));\n"
-                                + "            el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));\n"
-                                + "            el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));\n"
-                                + "          } catch(err) {}\n"
-                                + "        }\n"
-                                + "      }\n"
-                                + "    }\n"
-                                + "  } catch(e) {}\n"
-                                + "}\n"
                                 + "function triggerToggle() {\n"
                                 + "  try {\n"
-                                + "    autoBypassVerificationAndPlay();\n"
-                                + "    var centerX = window.innerWidth / 2;\n"
-                                + "    var centerY = window.innerHeight / 2;\n"
-                                + "    var centerEl = document.elementFromPoint(centerX, centerY);\n"
-                                + "    if (centerEl && centerEl !== document.body && centerEl !== document.documentElement) {\n"
-                                + "      try {\n"
-                                + "        centerEl.click();\n"
-                                + "        centerEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));\n"
-                                + "      } catch(e){}\n"
-                                + "    }\n"
-                                + "    if (window.p2p && p2p.player) {\n"
-                                + "      var state = typeof p2p.player.getState === 'function' ? p2p.player.getState() : '';\n"
-                                + "      if (state === 'playing' || (typeof p2p.player.isPlaying === 'function' && p2p.player.isPlaying())) {\n"
+                                + "    if (window.p2p && p2p.player && typeof p2p.player.getState === 'function') {\n"
+                                + "      var state = p2p.player.getState();\n"
+                                + "      if (state === 'playing') {\n"
                                 + "        p2p.player.pause(true);\n"
-                                + "      } else if (typeof p2p.player.play === 'function') {\n"
+                                + "      } else {\n"
                                 + "        p2p.player.play(true);\n"
                                 + "      }\n"
                                 + "      return;\n"
@@ -174,7 +136,7 @@ public class MainActivity extends BridgeActivity {
                                 + "    }\n"
                                 + "    var v = document.querySelector('video');\n"
                                 + "    if (v) {\n"
-                                + "      if (v.paused) { v.play().catch(function(){}); }\n"
+                                + "      if (v.paused) { v.play(); }\n"
                                 + "      else { v.pause(); }\n"
                                 + "      return;\n"
                                 + "    }\n"
@@ -217,10 +179,6 @@ public class MainActivity extends BridgeActivity {
                                 + "document.addEventListener('click', function() {\n"
                                 + "  try { window.parent.postMessage(JSON.stringify({ type: 'userActivity' }), '*'); } catch(err){}\n"
                                 + "}, true);\n"
-                                + "// Auto-bypass verification screens on load at intervals\n"
-                                + "[300, 800, 1500, 2500, 4000].forEach(function(delay) {\n"
-                                + "  setTimeout(autoBypassVerificationAndPlay, delay);\n"
-                                + "});\n"
                                 + "</script>\n";
 
                             if (fullHtml.contains("</body>")) {
