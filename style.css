@@ -269,8 +269,18 @@ body.tv-mode .genre-nav-bar {
     box-sizing: border-box;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 0 !important;
+    padding: 8px 0 20px 0 !important; /* Top and bottom padding to avoid clipping on focus */
     margin: 0 !important;
+    scroll-padding-top: 12px;
+    scroll-padding-bottom: 24px;
+}
+
+html.tv-mode .genre-nav-bar .genre-item:first-child {
+    margin-top: 2px !important;
+}
+
+html.tv-mode .genre-nav-bar .genre-item:last-child {
+    margin-bottom: 8px !important;
 }
 
 html.tv-mode .navbar:focus-within .genre-nav-bar,
