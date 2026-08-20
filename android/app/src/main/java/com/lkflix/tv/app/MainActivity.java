@@ -171,6 +171,7 @@ public class MainActivity extends BridgeActivity {
                                 + "  }\n"
                                 + "});\n"
                                 + "document.addEventListener('keydown', function(e) {\n"
+                                + "  try { window.parent.postMessage(JSON.stringify({ type: 'userActivity', key: e.key, keyCode: e.keyCode }), '*'); } catch(err){}\n"
                                 + "  if (e.keyCode === 37) { handleRemoteSeek(-10); }\n"
                                 + "  else if (e.keyCode === 39) { handleRemoteSeek(10); }\n"
                                 + "  else if (e.keyCode === 13 || e.keyCode === 23 || e.keyCode === 66 || e.keyCode === 32) { triggerToggle(); }\n"
@@ -207,6 +208,34 @@ public class MainActivity extends BridgeActivity {
 
             webView.addJavascriptInterface(new NativeBridge(), "AndroidBridge");
         }
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+        if (event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
+            final int keyCode = event.getKeyCode();
+            if (keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP ||
+                keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN ||
+                keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT ||
+                keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT ||
+                keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER ||
+                keyCode == android.view.KeyEvent.KEYCODE_ENTER ||
+                keyCode == android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ||
+                keyCode == android.view.KeyEvent.KEYCODE_MEDIA_PLAY ||
+                keyCode == android.view.KeyEvent.KEYCODE_MEDIA_PAUSE) {
+                
+                final WebView webView = getBridge().getWebView();
+                if (webView != null) {
+                    webView.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            webView.evaluateJavascript("if (typeof window.handleNativeDpad === 'function') { window.handleNativeDpad(" + keyCode + "); }", null);
+                        }
+                    });
+                }
+            }
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     @Override

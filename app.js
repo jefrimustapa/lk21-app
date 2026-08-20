@@ -730,6 +730,16 @@ window.addEventListener("message", (event) => {
             tryNextServerFallback();
         } else if (data && (data.type === "userActivity" || data.event === "click" || data.type === "tap" || data.type === "play" || data.type === "pause")) {
             showPlayerHeaderTemporarily();
+            if (data.keyCode === 19 || data.keyCode === 38) {
+                const switchBtn = document.getElementById("switchServerBtn");
+                const closeBtn = document.getElementById("closePlayerBtn");
+                if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                    switchBtn.focus();
+                } else if (closeBtn) {
+                    closeBtn.focus();
+                }
+                hideTvCursor();
+            }
             if (data.type === "play" || data.event === "play") {
                 isStreamLoaded = true;
                 isStreamPlaying = true;
@@ -738,6 +748,42 @@ window.addEventListener("message", (event) => {
         }
     } catch (e) {}
 });
+
+// Bridge hook called directly by Android native dispatchKeyEvent for all D-Pad remote events
+window.handleNativeDpad = function(nativeKeyCode) {
+    const playerModal = document.getElementById("playerModal");
+    if (!playerModal || playerModal.classList.contains("hidden")) return;
+
+    // Always bring back header on any remote D-Pad key event
+    showPlayerHeaderTemporarily();
+
+    const activeEl = document.activeElement;
+    const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
+    const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
+    const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
+
+    // Android KEYCODE_DPAD_UP = 19
+    if (nativeKeyCode === 19) {
+        if (!isHeaderBtnFocused) {
+            const switchBtn = document.getElementById("switchServerBtn");
+            const closeBtn = document.getElementById("closePlayerBtn");
+            if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                switchBtn.focus();
+            } else if (closeBtn) {
+                closeBtn.focus();
+            }
+            hideTvCursor();
+        }
+    } else if (nativeKeyCode === 20) { // Android KEYCODE_DPAD_DOWN = 20
+        if (isHeaderBtnFocused) {
+            if (activeEl) activeEl.blur();
+            window.focus();
+            if (!isStreamLoaded) {
+                showTvCursor(true);
+            }
+        }
+    }
+};
 
 let currentDynamicStreamAbortCtrl = null;
 
