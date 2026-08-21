@@ -482,17 +482,23 @@ function formatPlayerTime(seconds) {
     return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
+let currentStreamPosition = 0;
+let currentStreamDuration = 0;
+
 function updateCustomPlayerTime(currentTime, duration) {
+    if (currentTime !== undefined && !isNaN(currentTime)) currentStreamPosition = currentTime;
+    if (duration !== undefined && !isNaN(duration) && duration > 0) currentStreamDuration = duration;
+
     const curTimeEl = document.getElementById("tvCurrentTime");
     const durTimeEl = document.getElementById("tvDuration");
     const progEl = document.getElementById("tvScrubProgress");
     const thumbEl = document.getElementById("tvScrubThumb");
     
-    if (curTimeEl) curTimeEl.textContent = formatPlayerTime(currentTime);
-    if (durTimeEl && duration > 0) durTimeEl.textContent = formatPlayerTime(duration);
+    if (curTimeEl) curTimeEl.textContent = formatPlayerTime(currentStreamPosition);
+    if (durTimeEl && currentStreamDuration > 0) durTimeEl.textContent = formatPlayerTime(currentStreamDuration);
     
-    if (duration > 0 && progEl && thumbEl) {
-        const pct = Math.max(0, Math.min(100, (currentTime / duration) * 100));
+    if (currentStreamDuration > 0 && progEl && thumbEl) {
+        const pct = Math.max(0, Math.min(100, (currentStreamPosition / currentStreamDuration) * 100));
         progEl.style.width = `${pct}%`;
         thumbEl.style.left = `${pct}%`;
     }
@@ -697,8 +703,13 @@ function seekPlayerStream(seconds) {
         const newTime = Math.max(0, Math.min(nativeVideo.currentTime + seconds, (nativeVideo.duration || 999999)));
         nativeVideo.currentTime = newTime;
         updateCustomPlayerTime(nativeVideo.currentTime, nativeVideo.duration || 0);
+        showTvPlayerController(!isStreamPlaying);
         return;
     }
+
+    currentStreamPosition = Math.max(0, Math.min(currentStreamPosition + seconds, (currentStreamDuration || 999999)));
+    updateCustomPlayerTime(currentStreamPosition, currentStreamDuration);
+    showTvPlayerController(!isStreamPlaying);
 
     const iframe = document.getElementById("videoIframe");
     if (!iframe || !iframe.contentWindow) return;
