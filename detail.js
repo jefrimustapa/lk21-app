@@ -150,13 +150,8 @@ function renderRelatedMovies(movies) {
 }
 
 function goBack() {
-    console.log("[Detail] goBack requested");
-    if (window.history.length > 1) {
-        window.history.back();
-    }
-    setTimeout(() => {
-        window.location.href = "index.html";
-    }, 120);
+    console.log("[Detail] Navigating directly to home");
+    window.location.href = "index.html";
 }
 
 window.handleNativeBack = goBack;
@@ -179,7 +174,8 @@ function setupDetailListeners() {
     if (playBtn) {
         playBtn.onclick = () => {
             if (currentMovie && currentMovie.url) {
-                window.location.href = `player.html?url=${encodeURIComponent(currentMovie.url)}&title=${encodeURIComponent(currentMovie.title)}&quality=${encodeURIComponent(currentMovie.quality || "HD")}`;
+                const currentFullUrl = encodeURIComponent(window.location.href);
+                window.location.href = `player.html?url=${encodeURIComponent(currentMovie.url)}&title=${encodeURIComponent(currentMovie.title)}&quality=${encodeURIComponent(currentMovie.quality || "HD")}&returnUrl=${currentFullUrl}`;
             }
         };
     }
@@ -187,7 +183,8 @@ function setupDetailListeners() {
     if (posterEl) {
         posterEl.onclick = () => {
             if (currentMovie && currentMovie.url) {
-                window.location.href = `player.html?url=${encodeURIComponent(currentMovie.url)}&title=${encodeURIComponent(currentMovie.title)}&quality=${encodeURIComponent(currentMovie.quality || "HD")}`;
+                const currentFullUrl = encodeURIComponent(window.location.href);
+                window.location.href = `player.html?url=${encodeURIComponent(currentMovie.url)}&title=${encodeURIComponent(currentMovie.title)}&quality=${encodeURIComponent(currentMovie.quality || "HD")}&returnUrl=${currentFullUrl}`;
             }
         };
     }
