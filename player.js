@@ -56,24 +56,36 @@ function initFromUrl() {
     resolveAndPlayStream(activeMovie);
 }
 
+function goBack() {
+    console.log("[Player] goBack requested");
+    if (window.history.length > 1) {
+        window.history.back();
+    }
+    setTimeout(() => {
+        window.location.href = "index.html";
+    }, 120);
+}
+
+window.handleNativeBack = goBack;
+
 function setupEventListeners() {
     const closeBtn = document.getElementById("closePlayerBtn");
     const switchBtn = document.getElementById("switchServerBtn");
 
     if (closeBtn) {
-        closeBtn.addEventListener("click", () => {
-            if (window.history.length > 1) {
-                window.history.back();
-            } else {
-                window.location.href = "index.html";
+        closeBtn.onclick = (e) => {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
             }
-        });
+            goBack();
+        };
     }
 
     if (switchBtn) {
-        switchBtn.addEventListener("click", () => {
+        switchBtn.onclick = () => {
             switchStreamServer();
-        });
+        };
     }
 
     // Touch & tap on screen reveals header on mobile
@@ -474,7 +486,15 @@ window.handleNativeDpad = function(keyCode) {
                 const switchBtn = document.getElementById("switchServerBtn");
                 if (switchBtn && switchBtn.style.display !== "none") switchBtn.focus();
                 return;
-            } else if (keyCode === 23 || keyCode === 66) { // OK / Enter
+            } else if (keyCode === 23 || keyCode === 66 || keyCode === 13) { // OK / Enter
+                if (isCloseBtn) {
+                    goBack();
+                    return;
+                }
+                if (isSwitchBtn) {
+                    switchStreamServer();
+                    return;
+                }
                 if (activeEl && typeof activeEl.click === "function") activeEl.click();
                 return;
             }
@@ -495,7 +515,7 @@ window.handleNativeDpad = function(keyCode) {
         } else if (keyCode === 22) { // DPAD_RIGHT: Fast-Forward 10s
             seekPlayer(10);
             return;
-        } else if (keyCode === 23 || keyCode === 66) { // OK: Toggle Play
+        } else if (keyCode === 23 || keyCode === 66 || keyCode === 13) { // OK: Toggle Play
             togglePlay();
             return;
         }
@@ -518,7 +538,15 @@ window.handleNativeDpad = function(keyCode) {
             const switchBtn = document.getElementById("switchServerBtn");
             if (switchBtn && switchBtn.style.display !== "none") switchBtn.focus();
             return;
-        } else if (keyCode === 23 || keyCode === 66) {
+        } else if (keyCode === 23 || keyCode === 66 || keyCode === 13) {
+            if (isCloseBtn) {
+                goBack();
+                return;
+            }
+            if (isSwitchBtn) {
+                switchStreamServer();
+                return;
+            }
             if (activeEl && typeof activeEl.click === "function") activeEl.click();
             return;
         }
