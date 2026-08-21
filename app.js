@@ -443,9 +443,11 @@ function togglePlayerPlayback() {
         if (nativeVideo.paused) {
             nativeVideo.play().catch(e => console.log("Play error:", e));
             showSeekHudText("PLAY", "fa-play");
+            isStreamPlaying = true;
         } else {
             nativeVideo.pause();
             showSeekHudText("PAUSE", "fa-pause");
+            isStreamPlaying = false;
         }
         return;
     }
@@ -454,7 +456,9 @@ function togglePlayerPlayback() {
     if (iframe && iframe.contentWindow) {
         try {
             iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "togglePlay" }), "*");
+            iframe.contentWindow.postMessage(JSON.stringify({ type: "togglePlay" }), "*");
             iframe.contentWindow.postMessage({ type: "togglePlay" }, "*");
+            iframe.contentWindow.postMessage("togglePlay", "*");
         } catch (e) {
             console.warn("Iframe toggle error:", e);
         }
@@ -728,12 +732,16 @@ window.addEventListener("message", (event) => {
         if (data && (data.event === "error" || data.status === "error" || data.type === "error" || data.error)) {
             console.warn("[StreamEngine] Received error message from embedded player:", data);
             tryNextServerFallback();
-        } else if (data && (data.type === "userActivity" || data.event === "click" || data.type === "tap" || data.type === "play" || data.type === "pause")) {
+        } else if (data && (data.type === "userActivity" || data.event === "click" || data.type === "tap" || data.type === "play" || data.type === "pause" || data.state === "playing" || data.state === "paused")) {
             showPlayerHeaderTemporarily();
-            if (data.type === "play" || data.event === "play") {
+            if (data.type === "pause" || data.event === "pause" || data.state === "paused") {
+                isStreamPlaying = false;
+                showSeekHudText("PAUSE", "fa-pause");
+            } else if (data.type === "play" || data.event === "play" || data.state === "playing") {
                 isStreamLoaded = true;
                 isStreamPlaying = true;
                 hideTvCursor();
+                showSeekHudText("PLAY", "fa-play");
             }
         }
     } catch (e) {}
