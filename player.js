@@ -17,7 +17,6 @@ let seekHudTimer = null;
 let lastTogglePlaybackTime = 0;
 let tvCursorX = 0;
 let tvCursorY = 0;
-let tvCursorHideTimer = null;
 let hlsInstance = null;
 
 // Parse Query Parameters
@@ -298,7 +297,10 @@ function startPlayerHeaderHideCountdown() {
     if (playerHeaderTimer) clearTimeout(playerHeaderTimer);
     playerHeaderTimer = setTimeout(() => {
         header.classList.add("fade-out");
-        hideTvCursor();
+        // Only hide cursor after playback has started
+        if (hasPlaybackStarted) {
+            hideTvCursor();
+        }
     }, 4000);
 }
 
@@ -311,12 +313,12 @@ function showTvCursor(preservePosition = false) {
         hideTvCursor();
         return;
     }
-    const isTv = document.documentElement.classList.contains("tv-mode");
+    const isTv = document.documentElement.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
     const cursor = document.getElementById("tvVirtualCursor");
     if (!cursor) return;
 
     if (isTv) {
-        cursor.style.display = "";
+        cursor.style.display = "flex";
         cursor.classList.remove("hidden");
         cursor.style.opacity = "1";
         if (!preservePosition || !tvCursorX || !tvCursorY || tvCursorY < 120) {
@@ -331,7 +333,6 @@ function showTvCursor(preservePosition = false) {
 }
 
 function hideTvCursor() {
-    if (tvCursorHideTimer) clearTimeout(tvCursorHideTimer);
     const cursor = document.getElementById("tvVirtualCursor");
     if (cursor) {
         cursor.style.opacity = "0";
@@ -346,6 +347,9 @@ function updateTvCursorPosition(newX, newY) {
     if (hasPlaybackStarted) return;
     const cursor = document.getElementById("tvVirtualCursor");
     if (!cursor) return;
+    cursor.style.display = "flex";
+    cursor.classList.remove("hidden");
+    cursor.style.opacity = "1";
     const maxX = window.innerWidth || 1920;
     const maxY = window.innerHeight || 1080;
     tvCursorX = Math.max(20, Math.min(maxX - 20, newX));
@@ -512,7 +516,7 @@ window.handleNativeDpad = function(keyCode) {
         return;
     }
 
-    const step = 25;
+    const step = 45; // Fast and snappy cursor movement
     if (keyCode === 19) { // DPAD_UP
         const newY = tvCursorY - step;
         if (newY <= 75 || tvCursorY <= 75) {
@@ -548,6 +552,12 @@ window.handleNativeDpad = function(keyCode) {
         const normY = tvCursorY / (window.innerHeight || 1080);
         if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.simulateNativeTouchNormalized === "function") {
             window.AndroidBridge.simulateNativeTouchNormalized(normX, normY);
+        }
+        const iframe = document.getElementById("videoIframe");
+        if (iframe && iframe.contentWindow) {
+            try {
+                iframe.contentWindow.postMessage(JSON.stringify({ type: "play", func: "play" }), "*");
+            } catch(e) {}
         }
         return;
     }
