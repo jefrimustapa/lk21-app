@@ -556,6 +556,8 @@ function updatePlayerServerUI() {
                 showStreamToast("No alternative server available");
                 return;
             }
+            isStreamLoaded = false;
+            isStreamPlaying = false;
             activeServerIndex = (activeServerIndex + 1) % activeServerList.length;
             playCurrentServerStream();
             showPlayerHeaderTemporarily();
@@ -569,6 +571,9 @@ function updatePlayerServerUI() {
 }
 
 function playCurrentServerStream() {
+    isStreamLoaded = false;
+    isStreamPlaying = false;
+
     if (!activeServerList || activeServerList.length === 0) {
         showStreamToast("No stream sources available.");
         return;
@@ -715,6 +720,8 @@ function playCurrentServerStream() {
 function tryNextServerFallback() {
     if (activeServerIndex < activeServerList.length - 1) {
         activeServerIndex++;
+        isStreamLoaded = false;
+        isStreamPlaying = false;
         const nextNum = activeServerIndex + 1;
         showStreamToast(`Switching to Server ${nextNum}: ${getServerDisplayName(activeServerList[activeServerIndex], activeServerIndex)}...`, 2500);
         setTimeout(() => {
