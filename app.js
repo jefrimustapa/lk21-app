@@ -1083,7 +1083,7 @@ window.handleNativeDpad = function(nativeKeyCode) {
 
         const cursorEl = document.getElementById("tvVirtualCursor");
         let isCursorVisible = cursorEl && !cursorEl.classList.contains("hidden") && cursorEl.style.opacity !== "0";
-        const step = 45; // Pixels per D-Pad step
+        const step = 25; // Pixels per D-Pad step
 
         if (!isCursorVisible) {
             showTvCursor();
@@ -2150,7 +2150,7 @@ function setupEventListeners() {
                 const cursorEl = document.getElementById("tvVirtualCursor");
                 let isCursorVisible = cursorEl && !cursorEl.classList.contains("hidden") && cursorEl.style.opacity !== "0";
 
-                const step = 45; // Pixels per D-Pad press
+                const step = 25; // Pixels per D-Pad press
 
                 // If pointer is hidden/inactive before stream loads, ANY D-pad direction brings it back immediately
                 if (!isCursorVisible) {
