@@ -411,7 +411,7 @@ function showPlayerHeaderTemporarily() {
         if (modal && !modal.classList.contains("hidden")) {
             header.classList.add("fade-out");
         }
-    }, 10000);
+    }, 4000);
 }
 
 let seekHudTimer = null;
@@ -437,7 +437,13 @@ function showSeekHud(seconds) {
     }, 1200);
 }
 
+let lastTogglePlaybackTime = 0;
+
 function togglePlayerPlayback() {
+    const now = Date.now();
+    if (now - lastTogglePlaybackTime < 400) return;
+    lastTogglePlaybackTime = now;
+
     const nativeVideo = document.getElementById("nativeVideoPlayer");
     if (nativeVideo && !nativeVideo.classList.contains("hidden")) {
         if (nativeVideo.paused) {
@@ -736,20 +742,19 @@ function tryNextServerFallback() {
 window.addEventListener("message", (event) => {
     try {
         const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-        if (data && (data.event === "error" || data.status === "error" || data.type === "error" || data.error)) {
+        if (!data) return;
+
+        if (data.event === "error" || data.status === "error" || data.type === "error" || data.error) {
             console.warn("[StreamEngine] Received error message from embedded player:", data);
             tryNextServerFallback();
-        } else if (data && (data.type === "userActivity" || data.event === "click" || data.type === "tap" || data.type === "play" || data.type === "pause" || data.state === "playing" || data.state === "paused")) {
+        } else if (data.type === "userActivity" || data.event === "click" || data.type === "tap") {
             showPlayerHeaderTemporarily();
-            if (data.type === "pause" || data.event === "pause" || data.state === "paused") {
-                isStreamPlaying = false;
-                showSeekHudText("PAUSE", "fa-pause");
-            } else if (data.type === "play" || data.event === "play" || data.state === "playing") {
-                isStreamLoaded = true;
-                isStreamPlaying = true;
-                hideTvCursor();
-                showSeekHudText("PLAY", "fa-play");
-            }
+        } else if (data.type === "pause" || data.event === "pause" || data.state === "paused") {
+            isStreamPlaying = false;
+        } else if (data.type === "play" || data.event === "play" || data.state === "playing") {
+            isStreamLoaded = true;
+            isStreamPlaying = true;
+            hideTvCursor();
         }
     } catch (e) {}
 });
