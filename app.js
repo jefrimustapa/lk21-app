@@ -811,10 +811,16 @@ function playCurrentServerStream() {
     let playUrl = activeServerList[activeServerIndex];
     const serverNum = activeServerIndex + 1;
     const totalServers = activeServerList.length;
-    console.log(`[StreamEngine] Playing server ${serverNum}/${totalServers} (${getServerDisplayName(playUrl, activeServerIndex)}): ${playUrl}`);
+    const serverName = getServerDisplayName(playUrl, activeServerIndex);
+    console.log(`[StreamEngine] Playing server ${serverNum}/${totalServers} (${serverName}): ${playUrl}`);
+
+    const statusBadge = document.getElementById("tvStreamStatus");
+    if (statusBadge) {
+        statusBadge.textContent = serverName.toUpperCase();
+    }
 
     if (activeServerIndex > 0) {
-        showStreamToast(`Connecting to ${getServerDisplayName(playUrl, activeServerIndex)} (${serverNum}/${totalServers})...`, 2500);
+        showStreamToast(`Connecting to ${serverName} (${serverNum}/${totalServers})...`, 2500);
     }
 
     // Un-wrap direct player host if it points to videonode in AndroidBridge
@@ -1970,31 +1976,7 @@ function setupEventListeners() {
         }, 400);
     });
 
-    // TV Media Controller Listeners
-    const tvPlayPauseBtn = document.getElementById("tvPlayPauseBtn");
-    if (tvPlayPauseBtn) {
-        tvPlayPauseBtn.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            togglePlayerPlayback();
-        };
-    }
-    const tvRewindBtn = document.getElementById("tvRewindBtn");
-    if (tvRewindBtn) {
-        tvRewindBtn.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            seekPlayerStream(-10);
-        };
-    }
-    const tvForwardBtn = document.getElementById("tvForwardBtn");
-    if (tvForwardBtn) {
-        tvForwardBtn.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            seekPlayerStream(10);
-        };
-    }
+    // TV Media Controller Timeline Listener
     const tvScrubContainer = document.getElementById("tvScrubContainer");
     if (tvScrubContainer) {
         tvScrubContainer.onclick = (e) => {

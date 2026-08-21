@@ -1407,38 +1407,13 @@ body.tv-mode .btn-back-player:focus,
 .tv-controller-left {
     display: flex;
     align-items: center;
-    gap: 16px;
-}
-
-.tv-ctrl-btn {
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #fff;
-    font-size: 1.1rem;
-    padding: 8px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-.tv-ctrl-btn:focus, .tv-ctrl-btn:hover {
-    background: var(--netflix-red);
-    border-color: var(--netflix-red);
-    transform: scale(1.08);
-    box-shadow: 0 0 15px rgba(229, 9, 20, 0.6);
-    outline: none;
 }
 
 .tv-time-display {
-    font-size: 1.15rem;
+    font-size: 1.25rem;
     font-weight: 600;
     color: #E5E5E5;
     letter-spacing: 0.5px;
-    margin-left: 8px;
 }
 
 .tv-time-display span:first-child {
@@ -1450,6 +1425,17 @@ body.tv-mode .btn-back-player:focus,
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+.tv-controller-right .type-badge {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    background: var(--netflix-red);
+    color: #fff;
+    box-shadow: 0 0 12px rgba(229, 9, 20, 0.4);
 }
 
 /* ================================================================
