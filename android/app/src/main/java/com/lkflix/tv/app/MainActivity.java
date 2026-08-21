@@ -339,8 +339,8 @@ public class MainActivity extends BridgeActivity {
                     });
                 }
                 
-                // When in TV mode, consume D-pad events so they never propagate into embedded iframes
-                if (nativeIsTv) {
+                // When in TV mode, detach ONLY DPAD UP and DOWN from iframe
+                if (nativeIsTv && (keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP || keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN)) {
                     return true;
                 }
             }
