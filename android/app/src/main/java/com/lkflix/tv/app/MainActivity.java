@@ -116,8 +116,12 @@ public class MainActivity extends BridgeActivity {
                             fullHtml = fullHtml.replace("target=\"_blank\"", "target=\"_self\"");
 
                             String injectScript = "<script>\n"
+                                 + "var __lastToggleTime = 0;\n"
                                  + "function triggerToggle() {\n"
                                  + "  try {\n"
+                                 + "    var now = Date.now();\n"
+                                 + "    if (now - __lastToggleTime < 500) return;\n"
+                                 + "    __lastToggleTime = now;\n"
                                  + "    var isNowPlaying = false;\n"
                                  + "    try {\n"
                                  + "      var jw = (typeof window.jwplayer === 'function') ? (window.jwplayer() || window.jwplayer(0) || window.jwplayer('player')) : null;\n"
