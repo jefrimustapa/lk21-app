@@ -192,6 +192,7 @@ public class MainActivity extends BridgeActivity {
                                  + "    var isPlaying = false;\n"
                                  + "    if (window.p2p && p2p.player && typeof p2p.player.getState === 'function') {\n"
                                  + "      if (p2p.player.getState() === 'playing') isPlaying = true;\n"
+                                 + "    }\n"
                                  + "    var v = document.querySelector('video');\n"
                                  + "    if (v && !v.__lkBound) {\n"
                                  + "      v.__lkBound = true;\n"
