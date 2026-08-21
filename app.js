@@ -390,6 +390,11 @@ function renderHeroCarouselSlide(index) {
 function resetHeroCarouselTimer() {
     if (heroCarouselTimer) clearInterval(heroCarouselTimer);
     heroCarouselTimer = setInterval(() => {
+        const playerModal = document.getElementById("playerModal");
+        const detailModal = document.getElementById("detailModal");
+        if ((playerModal && !playerModal.classList.contains("hidden")) || (detailModal && !detailModal.classList.contains("hidden"))) {
+            return; // Pause carousel ticks while modals are open
+        }
         if (heroCarouselItems && heroCarouselItems.length > 0) {
             heroCarouselIndex = (heroCarouselIndex + 1) % heroCarouselItems.length;
             renderHeroCarouselSlide(heroCarouselIndex);
@@ -1056,23 +1061,24 @@ function openPlayerModal(movie) {
 
     modal.classList.remove("hidden");
 
-    // Auto hide top header overlay over stream after 10 seconds of inactivity
-    showPlayerHeaderTemporarily();
+    const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
 
-    // Re-show header when user touches screen, taps, or moves mouse/TV remote over player modal
-    ["touchstart", "touchend", "touchmove", "pointerdown", "pointerup", "pointermove", "mousemove", "mousedown", "click"].forEach((evtName) => {
-        modal.addEventListener(evtName, () => {
-            if (!modal.classList.contains("hidden")) {
-                showPlayerHeaderTemporarily();
-            }
-        }, { passive: true, capture: true });
-    });
+    // In mobile/touch mode, tap or touch screen reveals header
+    if (!isTv && !modal.dataset.touchListenersAttached) {
+        modal.dataset.touchListenersAttached = "true";
+        ["touchstart", "pointerdown", "click"].forEach((evtName) => {
+            modal.addEventListener(evtName, () => {
+                if (!modal.classList.contains("hidden")) {
+                    showPlayerHeaderTemporarily();
+                }
+            }, { passive: true });
+        });
+    }
 
     // Push history state so Android hardware back button / browser back closes player & returns to detail/catalog
     history.pushState({ modalOpen: "player" }, "");
     refreshFocusableElements();
     
-    const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
     if (isTv) {
         showTvCursor();
     } else {

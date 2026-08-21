@@ -230,10 +230,9 @@ public class MainActivity extends BridgeActivity {
                                  + "    }\n"
                                  + "  } catch(err){}\n"
                                  + "}\n"
-                                 + "function showIframeControls() {\n"
+                                 + "function showIframeControls(persistent) {\n"
                                  + "  try {\n"
-                                 + "    var evt = new MouseEvent('mousemove', { bubbles: true, cancelable: true, clientX: 100, clientY: 100 });\n"
-                                 + "    document.dispatchEvent(evt);\n"
+                                 + "    var evt = new MouseEvent('mousemove', { bubbles: false, cancelable: true, clientX: 100, clientY: 100 });\n"
                                  + "    var v = document.querySelector('video');\n"
                                  + "    if (v) {\n"
                                  + "      v.dispatchEvent(evt);\n"
@@ -281,12 +280,6 @@ public class MainActivity extends BridgeActivity {
                                  + "    triggerToggle();\n"
                                  + "  }\n"
                                  + "});\n"
-                                 + "document.addEventListener('touchstart', function() {\n"
-                                 + "  try { window.parent.postMessage(JSON.stringify({ type: 'userActivity' }), '*'); } catch(err){}\n"
-                                 + "}, { passive: true });\n"
-                                 + "document.addEventListener('click', function() {\n"
-                                 + "  try { window.parent.postMessage(JSON.stringify({ type: 'userActivity' }), '*'); } catch(err){}\n"
-                                 + "}, true);\n"
                                  + "</script>\n";
 
                             if (fullHtml.contains("</body>")) {
