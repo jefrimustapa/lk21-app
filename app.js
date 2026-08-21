@@ -752,28 +752,15 @@ function seekPlayerToPosition(targetSeconds) {
 
 function seekPlayerStream(seconds) {
     const targetPos = Math.max(0, Math.min(currentStreamPosition + seconds, (currentStreamDuration || 999999)));
+    currentStreamPosition = targetPos;
     showSeekHud(seconds, targetPos);
     seekPlayerToPosition(targetPos);
+    updateCustomPlayerTime(targetPos, currentStreamDuration);
 }
 
 function adaptiveSeek(direction) {
-    const now = Date.now();
-    if (now - lastSeekTimestamp < 450) {
-        seekAccMultiplier = Math.min(seekAccMultiplier * 1.6, 20);
-    } else {
-        seekAccMultiplier = 1;
-    }
-    lastSeekTimestamp = now;
-
-    clearTimeout(seekAccTimer);
-    seekAccTimer = setTimeout(() => {
-        seekAccMultiplier = 1;
-    }, 700);
-
-    const baseStep = Math.max(30, Math.round((currentStreamDuration || 3600) * 0.01));
-    const stepSeconds = Math.round(baseStep * seekAccMultiplier) * direction;
-
-    seekPlayerStream(stepSeconds);
+    const LINEAR_STEP_SECONDS = 10; // Fixed linear 10 seconds per D-Pad press
+    seekPlayerStream(LINEAR_STEP_SECONDS * direction);
 }
 
 let activeServerList = [];
