@@ -3,7 +3,7 @@
  * Standalone, 100% Isolated Cinema Playback Engine for TV & Mobile
  */
 
-const API_BASE = "https://lk21-app.mustapajefri.workers.dev";
+const API_BASE = "https://lk21-api.lkapp.workers.dev";
 
 // State
 let activeMovie = null;
@@ -17,7 +17,6 @@ let seekHudTimer = null;
 let lastTogglePlaybackTime = 0;
 let tvCursorX = 0;
 let tvCursorY = 0;
-let tvCursorHideTimer = null;
 let hlsInstance = null;
 
 // Parse Query Parameters
@@ -57,24 +56,36 @@ function initFromUrl() {
     resolveAndPlayStream(activeMovie);
 }
 
+function goBack() {
+    console.log("[Player] goBack requested");
+    if (window.history.length > 1) {
+        window.history.back();
+    }
+    setTimeout(() => {
+        window.location.href = "index.html";
+    }, 120);
+}
+
+window.handleNativeBack = goBack;
+
 function setupEventListeners() {
     const closeBtn = document.getElementById("closePlayerBtn");
     const switchBtn = document.getElementById("switchServerBtn");
 
     if (closeBtn) {
-        closeBtn.addEventListener("click", () => {
-            if (window.history.length > 1) {
-                window.history.back();
-            } else {
-                window.location.href = "index.html";
+        closeBtn.onclick = (e) => {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
             }
-        });
+            goBack();
+        };
     }
 
     if (switchBtn) {
-        switchBtn.addEventListener("click", () => {
+        switchBtn.onclick = () => {
             switchStreamServer();
-        });
+        };
     }
 
     // Touch & tap on screen reveals header on mobile
@@ -298,7 +309,10 @@ function startPlayerHeaderHideCountdown() {
     if (playerHeaderTimer) clearTimeout(playerHeaderTimer);
     playerHeaderTimer = setTimeout(() => {
         header.classList.add("fade-out");
-        hideTvCursor();
+        // Only hide cursor after playback has started
+        if (hasPlaybackStarted) {
+            hideTvCursor();
+        }
     }, 4000);
 }
 
@@ -311,12 +325,12 @@ function showTvCursor(preservePosition = false) {
         hideTvCursor();
         return;
     }
-    const isTv = document.documentElement.classList.contains("tv-mode");
+    const isTv = document.documentElement.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
     const cursor = document.getElementById("tvVirtualCursor");
     if (!cursor) return;
 
     if (isTv) {
-        cursor.style.display = "";
+        cursor.style.display = "flex";
         cursor.classList.remove("hidden");
         cursor.style.opacity = "1";
         if (!preservePosition || !tvCursorX || !tvCursorY || tvCursorY < 120) {
@@ -331,7 +345,6 @@ function showTvCursor(preservePosition = false) {
 }
 
 function hideTvCursor() {
-    if (tvCursorHideTimer) clearTimeout(tvCursorHideTimer);
     const cursor = document.getElementById("tvVirtualCursor");
     if (cursor) {
         cursor.style.opacity = "0";
@@ -346,6 +359,9 @@ function updateTvCursorPosition(newX, newY) {
     if (hasPlaybackStarted) return;
     const cursor = document.getElementById("tvVirtualCursor");
     if (!cursor) return;
+    cursor.style.display = "flex";
+    cursor.classList.remove("hidden");
+    cursor.style.opacity = "1";
     const maxX = window.innerWidth || 1920;
     const maxY = window.innerHeight || 1080;
     tvCursorX = Math.max(20, Math.min(maxX - 20, newX));
@@ -441,6 +457,15 @@ function togglePlay() {
 
 // Native D-Pad Bridge Hook
 window.handleNativeDpad = function(keyCode) {
+    if (keyCode === 4) { // Hardware BACK button
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = "index.html";
+        }
+        return;
+    }
+
     const activeEl = document.activeElement;
     const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
     const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
@@ -461,7 +486,15 @@ window.handleNativeDpad = function(keyCode) {
                 const switchBtn = document.getElementById("switchServerBtn");
                 if (switchBtn && switchBtn.style.display !== "none") switchBtn.focus();
                 return;
-            } else if (keyCode === 23 || keyCode === 66) { // OK / Enter
+            } else if (keyCode === 23 || keyCode === 66 || keyCode === 13) { // OK / Enter
+                if (isCloseBtn) {
+                    goBack();
+                    return;
+                }
+                if (isSwitchBtn) {
+                    switchStreamServer();
+                    return;
+                }
                 if (activeEl && typeof activeEl.click === "function") activeEl.click();
                 return;
             }
@@ -482,7 +515,7 @@ window.handleNativeDpad = function(keyCode) {
         } else if (keyCode === 22) { // DPAD_RIGHT: Fast-Forward 10s
             seekPlayer(10);
             return;
-        } else if (keyCode === 23 || keyCode === 66) { // OK: Toggle Play
+        } else if (keyCode === 23 || keyCode === 66 || keyCode === 13) { // OK: Toggle Play
             togglePlay();
             return;
         }
@@ -505,14 +538,22 @@ window.handleNativeDpad = function(keyCode) {
             const switchBtn = document.getElementById("switchServerBtn");
             if (switchBtn && switchBtn.style.display !== "none") switchBtn.focus();
             return;
-        } else if (keyCode === 23 || keyCode === 66) {
+        } else if (keyCode === 23 || keyCode === 66 || keyCode === 13) {
+            if (isCloseBtn) {
+                goBack();
+                return;
+            }
+            if (isSwitchBtn) {
+                switchStreamServer();
+                return;
+            }
             if (activeEl && typeof activeEl.click === "function") activeEl.click();
             return;
         }
         return;
     }
 
-    const step = 25;
+    const step = 45; // Fast and snappy cursor movement
     if (keyCode === 19) { // DPAD_UP
         const newY = tvCursorY - step;
         if (newY <= 75 || tvCursorY <= 75) {
@@ -549,11 +590,20 @@ window.handleNativeDpad = function(keyCode) {
         if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.simulateNativeTouchNormalized === "function") {
             window.AndroidBridge.simulateNativeTouchNormalized(normX, normY);
         }
+        const iframe = document.getElementById("videoIframe");
+        if (iframe && iframe.contentWindow) {
+            try {
+                iframe.contentWindow.postMessage(JSON.stringify({ type: "play", func: "play" }), "*");
+            } catch(e) {}
+        }
         return;
     }
 };
 
 function handleKeyDown(e) {
+    if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.isTv === "function" && window.AndroidBridge.isTv()) {
+        return;
+    }
     const key = e.key;
     const keyCode = e.keyCode;
 
