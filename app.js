@@ -759,13 +759,30 @@ window.addEventListener("message", (event) => {
     } catch (e) {}
 });
 
+function showPlayerControls() {
+    showPlayerHeaderTemporarily();
+
+    const nativeVideo = document.getElementById("nativeVideoPlayer");
+    if (nativeVideo && !nativeVideo.classList.contains("hidden")) {
+        nativeVideo.controls = true;
+    }
+
+    const iframe = document.getElementById("videoIframe");
+    if (iframe && iframe.contentWindow) {
+        try {
+            iframe.contentWindow.postMessage(JSON.stringify({ type: "showControls" }), "*");
+            iframe.contentWindow.postMessage({ type: "showControls" }, "*");
+        } catch (e) {}
+    }
+}
+
 // Bridge hook called directly by Android native dispatchKeyEvent for all D-Pad remote events
 window.handleNativeDpad = function(nativeKeyCode) {
     const playerModal = document.getElementById("playerModal");
     if (!playerModal || playerModal.classList.contains("hidden")) return;
 
-    // Always bring back header on any remote D-Pad key event
-    showPlayerHeaderTemporarily();
+    // Always reveal controls and header on any remote D-Pad key event
+    showPlayerControls();
 
     // When stream has loaded/playing, process TV remote playback controls
     if (isStreamLoaded) {
