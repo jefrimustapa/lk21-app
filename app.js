@@ -1001,12 +1001,61 @@ window.handleNativeDpad = function(nativeKeyCode) {
     const playerModal = document.getElementById("playerModal");
     if (!playerModal || playerModal.classList.contains("hidden")) return;
 
-    // If user interacts with playback keys on remote, ensure stream state is active
-    if (!isStreamLoaded && (nativeKeyCode === 21 || nativeKeyCode === 22 || nativeKeyCode === 23 || nativeKeyCode === 66 || nativeKeyCode === 85 || nativeKeyCode === 126 || nativeKeyCode === 127)) {
-        isStreamLoaded = true;
+    const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
+
+    // === 1. VIRTUAL POINTER MODE (BEFORE STREAM HAS LOADED / BOT VERIFICATION) ===
+    if (!isStreamLoaded) {
+        const cursorEl = document.getElementById("tvVirtualCursor");
+        let isCursorVisible = cursorEl && !cursorEl.classList.contains("hidden") && cursorEl.style.opacity !== "0";
+        const step = 45; // Pixels per D-Pad step
+
+        if (!isCursorVisible) {
+            showTvCursor();
+            isCursorVisible = true;
+        }
+
+        if (nativeKeyCode === 19) { // DPAD_UP
+            if (tvCursorY <= 60) {
+                const switchBtn = document.getElementById("switchServerBtn");
+                const closeBtn = document.getElementById("closePlayerBtn");
+                if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) switchBtn.focus();
+                else if (closeBtn) closeBtn.focus();
+                hideTvCursor();
+                return;
+            }
+            updateTvCursorPosition(tvCursorX, Math.max(30, tvCursorY - step));
+            return;
+        } else if (nativeKeyCode === 20) { // DPAD_DOWN
+            updateTvCursorPosition(tvCursorX, tvCursorY + step);
+            return;
+        } else if (nativeKeyCode === 21) { // DPAD_LEFT
+            updateTvCursorPosition(tvCursorX - step, tvCursorY);
+            return;
+        } else if (nativeKeyCode === 22) { // DPAD_RIGHT
+            updateTvCursorPosition(tvCursorX + step, tvCursorY);
+            return;
+        } else if (nativeKeyCode === 23 || nativeKeyCode === 66) { // DPAD_CENTER / ENTER
+            if (cursorEl) {
+                cursorEl.classList.add("clicking");
+                setTimeout(() => cursorEl.classList.remove("clicking"), 220);
+            }
+            const screenW = window.innerWidth || 1920;
+            const screenH = window.innerHeight || 1080;
+            const normX = tvCursorX / screenW;
+            const normY = tvCursorY / screenH;
+
+            if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.simulateNativeTouchNormalized === "function") {
+                window.AndroidBridge.simulateNativeTouchNormalized(normX, normY);
+            } else {
+                togglePlayerPlayback();
+            }
+            resetTvCursorHideTimer();
+            return;
+        }
+        return;
     }
 
-    // When stream has loaded/playing, process TV remote playback controls
+    // === 2. ACTIVE STREAM PLAYBACK CONTROLS (WHEN STREAM IS LOADED) ===
     if (isStreamLoaded) {
         const activeEl = document.activeElement;
         const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
