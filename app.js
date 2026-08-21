@@ -730,16 +730,6 @@ window.addEventListener("message", (event) => {
             tryNextServerFallback();
         } else if (data && (data.type === "userActivity" || data.event === "click" || data.type === "tap" || data.type === "play" || data.type === "pause")) {
             showPlayerHeaderTemporarily();
-            if (data.keyCode === 19 || data.keyCode === 38) {
-                const switchBtn = document.getElementById("switchServerBtn");
-                const closeBtn = document.getElementById("closePlayerBtn");
-                if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
-                    switchBtn.focus();
-                } else if (closeBtn) {
-                    closeBtn.focus();
-                }
-                hideTvCursor();
-            }
             if (data.type === "play" || data.event === "play") {
                 isStreamLoaded = true;
                 isStreamPlaying = true;
@@ -757,29 +747,20 @@ window.handleNativeDpad = function(nativeKeyCode) {
     // Always bring back header on any remote D-Pad key event
     showPlayerHeaderTemporarily();
 
-    const activeEl = document.activeElement;
-    const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
-    const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
-    const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
+    // Only when stream has loaded/playing, pressing UP moves focus to header buttons
+    if (isStreamLoaded) {
+        const activeEl = document.activeElement;
+        const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
+        const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
+        const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
 
-    // Android KEYCODE_DPAD_UP = 19
-    if (nativeKeyCode === 19) {
-        if (!isHeaderBtnFocused) {
+        if (nativeKeyCode === 19 && !isHeaderBtnFocused) { // DPAD_UP
             const switchBtn = document.getElementById("switchServerBtn");
             const closeBtn = document.getElementById("closePlayerBtn");
             if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
                 switchBtn.focus();
             } else if (closeBtn) {
                 closeBtn.focus();
-            }
-            hideTvCursor();
-        }
-    } else if (nativeKeyCode === 20) { // Android KEYCODE_DPAD_DOWN = 20
-        if (isHeaderBtnFocused) {
-            if (activeEl) activeEl.blur();
-            window.focus();
-            if (!isStreamLoaded) {
-                showTvCursor(true);
             }
         }
     }
@@ -1702,7 +1683,7 @@ function setupEventListeners() {
                 if (isCursorVisible) {
                     if (key === "ArrowUp" || keyCode === 38) {
                         e.preventDefault();
-                        if (tvCursorY - step < 80) {
+                        if (tvCursorY <= 40) {
                             const switchBtn = document.getElementById("switchServerBtn");
                             const closeBtn = document.getElementById("closePlayerBtn");
                             if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) switchBtn.focus();
@@ -1710,7 +1691,7 @@ function setupEventListeners() {
                             hideTvCursor();
                             return;
                         }
-                        updateTvCursorPosition(tvCursorX, tvCursorY - step);
+                        updateTvCursorPosition(tvCursorX, Math.max(30, tvCursorY - step));
                         return;
                     }
 
