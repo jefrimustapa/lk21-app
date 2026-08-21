@@ -1001,6 +1001,11 @@ window.handleNativeDpad = function(nativeKeyCode) {
     const playerModal = document.getElementById("playerModal");
     if (!playerModal || playerModal.classList.contains("hidden")) return;
 
+    // If user interacts with playback keys on remote, ensure stream state is active
+    if (!isStreamLoaded && (nativeKeyCode === 21 || nativeKeyCode === 22 || nativeKeyCode === 23 || nativeKeyCode === 66 || nativeKeyCode === 85 || nativeKeyCode === 126 || nativeKeyCode === 127)) {
+        isStreamLoaded = true;
+    }
+
     // When stream has loaded/playing, process TV remote playback controls
     if (isStreamLoaded) {
         const activeEl = document.activeElement;
