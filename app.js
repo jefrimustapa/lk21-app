@@ -1050,8 +1050,37 @@ window.handleNativeDpad = function(nativeKeyCode) {
 
     const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
 
+    const activeEl = document.activeElement;
+    const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
+    const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
+    const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
+
     // === 1. VIRTUAL POINTER MODE (BEFORE STREAM HAS LOADED / BOT VERIFICATION) ===
     if (!isStreamLoaded) {
+        // If focus is currently on the Header buttons
+        if (isHeaderBtnFocused) {
+            if (nativeKeyCode === 20) { // DPAD_DOWN: Leave header and return to Virtual Pointer in video area
+                if (activeEl) activeEl.blur();
+                showTvCursor(true);
+                updateTvCursorPosition(tvCursorX, Math.max(120, tvCursorY));
+                return;
+            } else if (nativeKeyCode === 21) { // DPAD_LEFT: Focus Back button
+                const closeBtn = document.getElementById("closePlayerBtn");
+                if (closeBtn) closeBtn.focus();
+                return;
+            } else if (nativeKeyCode === 22) { // DPAD_RIGHT: Focus Server button if visible
+                const switchBtn = document.getElementById("switchServerBtn");
+                if (switchBtn && switchBtn.style.display !== "none") switchBtn.focus();
+                return;
+            } else if (nativeKeyCode === 23 || nativeKeyCode === 66) { // OK / Enter
+                if (activeEl && typeof activeEl.click === "function") {
+                    activeEl.click();
+                }
+                return;
+            }
+            return;
+        }
+
         const cursorEl = document.getElementById("tvVirtualCursor");
         let isCursorVisible = cursorEl && !cursorEl.classList.contains("hidden") && cursorEl.style.opacity !== "0";
         const step = 45; // Pixels per D-Pad step
@@ -1062,7 +1091,22 @@ window.handleNativeDpad = function(nativeKeyCode) {
         }
 
         if (nativeKeyCode === 19) { // DPAD_UP
-            updateTvCursorPosition(tvCursorX, Math.max(20, tvCursorY - step));
+            const newY = tvCursorY - step;
+            if (newY <= 55) { // Reached the top header bar!
+                showPlayerHeaderPersistent();
+                const screenW = window.innerWidth || 1920;
+                const switchBtn = document.getElementById("switchServerBtn");
+                const closeBtn = document.getElementById("closePlayerBtn");
+                
+                if (tvCursorX > screenW / 2 && switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                    switchBtn.focus();
+                } else if (closeBtn) {
+                    closeBtn.focus();
+                }
+                hideTvCursor();
+                return;
+            }
+            updateTvCursorPosition(tvCursorX, newY);
             return;
         } else if (nativeKeyCode === 20) { // DPAD_DOWN
             updateTvCursorPosition(tvCursorX, tvCursorY + step);
@@ -1096,10 +1140,6 @@ window.handleNativeDpad = function(nativeKeyCode) {
 
     // === 2. ACTIVE STREAM PLAYBACK CONTROLS (WHEN STREAM IS LOADED) ===
     if (isStreamLoaded) {
-        const activeEl = document.activeElement;
-        const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
-        const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
-        const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
         const isScrubFocused = activeEl && activeEl.id === "tvScrubContainer";
         const isCtrlBtnFocused = activeEl && activeEl.classList.contains("tv-ctrl-btn");
 
@@ -2127,7 +2167,22 @@ function setupEventListeners() {
                 if (isCursorVisible) {
                     if (key === "ArrowUp" || keyCode === 38) {
                         e.preventDefault();
-                        updateTvCursorPosition(tvCursorX, Math.max(20, tvCursorY - step));
+                        const newY = tvCursorY - step;
+                        if (newY <= 55) {
+                            showPlayerHeaderPersistent();
+                            const screenW = window.innerWidth || 1920;
+                            const switchBtn = document.getElementById("switchServerBtn");
+                            const closeBtn = document.getElementById("closePlayerBtn");
+                            
+                            if (tvCursorX > screenW / 2 && switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                                switchBtn.focus();
+                            } else if (closeBtn) {
+                                closeBtn.focus();
+                            }
+                            hideTvCursor();
+                            return;
+                        }
+                        updateTvCursorPosition(tvCursorX, newY);
                         return;
                     }
 
