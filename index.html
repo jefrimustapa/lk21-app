@@ -168,29 +168,8 @@
 
         <!-- Full Viewport Embedded Cinema Stream -->
         <div class="player-container">
-            <video id="nativeVideoPlayer" class="hidden" autoplay playsinline style="width: 100%; height: 100%; object-fit: contain; background: #000;"></video>
+            <video id="nativeVideoPlayer" class="hidden" controls autoplay playsinline style="width: 100%; height: 100%; object-fit: contain; background: #000;"></video>
             <iframe id="videoIframe" src="" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"></iframe>
-        </div>
-
-        <!-- TV Cinema Media Controller Bar (Active when playing stream) -->
-        <div class="tv-player-controller hidden" id="tvPlayerController">
-            <div class="tv-scrub-track-container" id="tvScrubContainer" tabindex="0">
-                <div class="tv-scrub-bar" id="tvScrubBar">
-                    <div class="tv-scrub-buffer" id="tvScrubBuffer"></div>
-                    <div class="tv-scrub-progress" id="tvScrubProgress"></div>
-                    <div class="tv-scrub-thumb" id="tvScrubThumb"></div>
-                </div>
-            </div>
-            <div class="tv-controller-controls">
-                <div class="tv-controller-left">
-                    <div class="tv-time-display">
-                        <span id="tvCurrentTime">00:00</span> / <span id="tvDuration">00:00</span>
-                    </div>
-                </div>
-                <div class="tv-controller-right">
-                    <span class="badge type-badge" id="tvStreamStatus">SERVER 1</span>
-                </div>
-            </div>
         </div>
 
         <!-- TV Remote Virtual Pointer Cursor (Active only on TV inside player modal) -->
