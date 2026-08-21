@@ -1728,13 +1728,15 @@ function setupEventListeners() {
             const keyCode = e.keyCode;
             const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
 
-            // 1. Re-appear top cinematic header overlay on ANY D-Pad / remote key press (up, down, left, right, ok)
-            showPlayerHeaderTemporarily();
-
             const activeEl = document.activeElement;
             const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
             const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
             const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
+
+            // Only show temporary header when NOT actively playing
+            if (!isStreamLoaded) {
+                showPlayerHeaderTemporarily();
+            }
 
             // === 2. IF FOCUS IS ON BUTTONS IN THE HEADER ===
             if (isHeaderBtnFocused) {
@@ -1871,71 +1873,68 @@ function setupEventListeners() {
             }
 
             // === 4. ACTIVE STREAM PLAYBACK CONTROLS (STREAM IS PLAYING / LOADED) ===
-            const activeEl = document.activeElement;
-            const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
-            const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
-            const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
-
-            if (isStreamPlaying) {
-                // When playing, D-Pad UP/DOWN/LEFT/RIGHT does NOT show navbar
-                if (key === "ArrowLeft" || keyCode === 37) {
-                    e.preventDefault();
-                    seekPlayerStream(-10);
-                    return;
-                }
-                if (key === "ArrowRight" || keyCode === 39) {
-                    e.preventDefault();
-                    seekPlayerStream(10);
-                    return;
-                }
-                if (key === "Enter" || keyCode === 13 || keyCode === 23 || keyCode === 66 || key === " " || keyCode === 32) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    togglePlayerPlayback();
-                    return;
-                }
-                if (key === "ArrowUp" || keyCode === 38 || key === "ArrowDown" || keyCode === 40) {
-                    e.preventDefault();
-                    return;
-                }
-            } else {
-                // When paused, header is persistent; support UP/DOWN focus switching
-                if (isHeaderBtnFocused && (key === "ArrowDown" || keyCode === 40)) {
-                    e.preventDefault();
-                    if (activeEl) activeEl.blur();
-                    window.focus();
-                    return;
-                }
-
-                if (!isHeaderBtnFocused && (key === "ArrowUp" || keyCode === 38)) {
-                    e.preventDefault();
-                    const switchBtn = document.getElementById("switchServerBtn");
-                    const closeBtn = document.getElementById("closePlayerBtn");
-                    if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
-                        switchBtn.focus();
-                    } else if (closeBtn) {
-                        closeBtn.focus();
+            if (isStreamLoaded) {
+                if (isStreamPlaying) {
+                    // When playing, D-Pad UP/DOWN/LEFT/RIGHT does NOT show navbar
+                    if (key === "ArrowLeft" || keyCode === 37) {
+                        e.preventDefault();
+                        seekPlayerStream(-10);
+                        return;
                     }
-                    return;
-                }
+                    if (key === "ArrowRight" || keyCode === 39) {
+                        e.preventDefault();
+                        seekPlayerStream(10);
+                        return;
+                    }
+                    if (key === "Enter" || keyCode === 13 || keyCode === 23 || keyCode === 66 || key === " " || keyCode === 32) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        togglePlayerPlayback();
+                        return;
+                    }
+                    if (key === "ArrowUp" || keyCode === 38 || key === "ArrowDown" || keyCode === 40) {
+                        e.preventDefault();
+                        return;
+                    }
+                } else {
+                    // When paused, header is persistent; support UP/DOWN focus switching
+                    if (isHeaderBtnFocused && (key === "ArrowDown" || keyCode === 40)) {
+                        e.preventDefault();
+                        if (activeEl) activeEl.blur();
+                        window.focus();
+                        return;
+                    }
 
-                if (!isHeaderBtnFocused && (key === "Enter" || keyCode === 13 || keyCode === 23 || keyCode === 66 || key === " " || keyCode === 32)) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    togglePlayerPlayback();
-                    return;
-                }
+                    if (!isHeaderBtnFocused && (key === "ArrowUp" || keyCode === 38)) {
+                        e.preventDefault();
+                        const switchBtn = document.getElementById("switchServerBtn");
+                        const closeBtn = document.getElementById("closePlayerBtn");
+                        if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                            switchBtn.focus();
+                        } else if (closeBtn) {
+                            closeBtn.focus();
+                        }
+                        return;
+                    }
 
-                if (!isHeaderBtnFocused && (key === "ArrowRight" || keyCode === 39)) {
-                    e.preventDefault();
-                    seekPlayerStream(10);
-                    return;
-                }
+                    if (!isHeaderBtnFocused && (key === "Enter" || keyCode === 13 || keyCode === 23 || keyCode === 66 || key === " " || keyCode === 32)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        togglePlayerPlayback();
+                        return;
+                    }
 
-                if (!isHeaderBtnFocused && (key === "ArrowLeft" || keyCode === 37)) {
-                    e.preventDefault();
-                    seekPlayerStream(-10);
-                    return;
+                    if (!isHeaderBtnFocused && (key === "ArrowRight" || keyCode === 39)) {
+                        e.preventDefault();
+                        seekPlayerStream(10);
+                        return;
+                    }
+
+                    if (!isHeaderBtnFocused && (key === "ArrowLeft" || keyCode === 37)) {
+                        e.preventDefault();
+                        seekPlayerStream(-10);
+                        return;
+                    }
                 }
             }
         }
