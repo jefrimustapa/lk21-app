@@ -269,7 +269,6 @@ public class MainActivity extends BridgeActivity {
                                  + "  } else if (data.type === 'startHideCountdown') {\n"
                                  + "    showIframeControls(false);\n"
                                  + "  } else if (data.type === 'seek' || data.func === 'fastForward' || data.func === 'rewind') {\n"
-                                 + "    showIframeControls(false);\n"
                                  + "    var offset = data.offset || (data.args && data.args[0]) || 10;\n"
                                  + "    if (data.func === 'rewind' && offset > 0) offset = -offset;\n"
                                  + "    handleRemoteSeek(offset);\n"
