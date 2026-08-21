@@ -903,6 +903,10 @@ function openPlayerModal(movie) {
     isStreamLoaded = false;
     isStreamPlaying = false;
     
+    if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.setPlayerActive === "function") {
+        window.AndroidBridge.setPlayerActive(true);
+    }
+
     // Hide virtual cursor initially until iframe finishes loading
     hideTvCursor();
     
@@ -1055,6 +1059,10 @@ function closePlayerModal(fromHistory = false) {
     const modal = document.getElementById("playerModal");
     if (modal.classList.contains("hidden")) return;
     
+    if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.setPlayerActive === "function") {
+        window.AndroidBridge.setPlayerActive(false);
+    }
+
     hideTvCursor();
     
     if (currentDynamicStreamAbortCtrl) {

@@ -277,6 +277,13 @@ public class MainActivity extends BridgeActivity {
                                  + "document.addEventListener('click', function() {\n"
                                  + "  try { window.parent.postMessage(JSON.stringify({ type: 'userActivity' }), '*'); } catch(err){}\n"
                                  + "}, true);\n"
+                                 + "document.addEventListener('keydown', function(e) {\n"
+                                 + "  if (e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 21 || e.keyCode === 22 || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Left' || e.key === 'Right') {\n"
+                                 + "    e.preventDefault();\n"
+                                 + "    e.stopPropagation();\n"
+                                 + "    e.stopImmediatePropagation();\n"
+                                 + "  }\n"
+                                 + "}, true);\n"
                                  + "</script>\n";
 
                             if (fullHtml.contains("</body>")) {
@@ -305,6 +312,8 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
+    private volatile boolean isPlayerActive = false;
+
     @Override
     public boolean dispatchKeyEvent(android.view.KeyEvent event) {
         if (event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
@@ -327,6 +336,9 @@ public class MainActivity extends BridgeActivity {
                             webView.evaluateJavascript("if (typeof window.handleNativeDpad === 'function') { window.handleNativeDpad(" + keyCode + "); }", null);
                         }
                     });
+                }
+                if (isPlayerActive) {
+                    return true;
                 }
             }
         }
@@ -364,6 +376,11 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public boolean isTv() {
             return nativeIsTv;
+        }
+
+        @JavascriptInterface
+        public void setPlayerActive(boolean active) {
+            isPlayerActive = active;
         }
 
         @JavascriptInterface
