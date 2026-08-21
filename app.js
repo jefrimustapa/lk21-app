@@ -884,12 +884,12 @@ window.handleNativeDpad = function(nativeKeyCode) {
 
     if (nativeKeyCode === 19) { // DPAD_UP
         const newY = tvCursorY - step;
-        if (newY <= 55) { // Reached top header bar!
+        if (newY <= 75 || tvCursorY <= 75) { // Reached top header bar!
             showPlayerHeaderPersistent();
             const screenW = window.innerWidth || 1920;
             const switchBtn = document.getElementById("switchServerBtn");
             const closeBtn = document.getElementById("closePlayerBtn");
-            if (tvCursorX > screenW / 2 && switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+            if (tvCursorX > screenW / 2 && switchBtn && switchBtn.style.display !== "none") {
                 switchBtn.focus();
             } else if (closeBtn) {
                 closeBtn.focus();
@@ -1842,11 +1842,11 @@ function setupEventListeners() {
                     if (key === "ArrowUp" || keyCode === 38) {
                         e.preventDefault();
                         const newY = tvCursorY - step;
-                        if (newY <= 55) {
+                        if (newY <= 75 || tvCursorY <= 75) {
                             showPlayerHeaderPersistent();
                             const switchBtn = document.getElementById("switchServerBtn");
                             const closeBtn = document.getElementById("closePlayerBtn");
-                            if (tvCursorX > (window.innerWidth || 1920) / 2 && switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                            if (tvCursorX > (window.innerWidth || 1920) / 2 && switchBtn && switchBtn.style.display !== "none") {
                                 switchBtn.focus();
                             } else if (closeBtn) {
                                 closeBtn.focus();
