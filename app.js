@@ -1062,15 +1062,7 @@ window.handleNativeDpad = function(nativeKeyCode) {
         }
 
         if (nativeKeyCode === 19) { // DPAD_UP
-            if (tvCursorY <= 60) {
-                const switchBtn = document.getElementById("switchServerBtn");
-                const closeBtn = document.getElementById("closePlayerBtn");
-                if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) switchBtn.focus();
-                else if (closeBtn) closeBtn.focus();
-                hideTvCursor();
-                return;
-            }
-            updateTvCursorPosition(tvCursorX, Math.max(30, tvCursorY - step));
+            updateTvCursorPosition(tvCursorX, Math.max(20, tvCursorY - step));
             return;
         } else if (nativeKeyCode === 20) { // DPAD_DOWN
             updateTvCursorPosition(tvCursorX, tvCursorY + step);
@@ -1323,9 +1315,13 @@ function openPlayerModal(movie) {
     history.pushState({ modalOpen: "player" }, "");
     refreshFocusableElements();
     
+    if (document.activeElement && typeof document.activeElement.blur === "function") {
+        document.activeElement.blur();
+    }
+    
     const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
     if (isTv) {
-        showTvCursor();
+        showTvCursor(false);
     } else {
         const iframe = document.getElementById("videoIframe");
         const nativeVideo = document.getElementById("nativeVideoPlayer");
@@ -1371,9 +1367,10 @@ function showTvCursor(preservePosition = false) {
     if (isTv) {
         cursor.classList.remove("hidden");
         cursor.style.opacity = "1";
-        if (!preservePosition || !tvCursorX || !tvCursorY || tvCursorY < 120) {
-            // Position near center / play button
-            updateTvCursorPosition(window.innerWidth / 2, window.innerHeight / 2);
+        const screenW = window.innerWidth || 1920;
+        const screenH = window.innerHeight || 1080;
+        if (!preservePosition || !tvCursorX || !tvCursorY) {
+            updateTvCursorPosition(screenW / 2, screenH / 2);
         } else {
             updateTvCursorPosition(tvCursorX, tvCursorY);
         }
@@ -2130,15 +2127,7 @@ function setupEventListeners() {
                 if (isCursorVisible) {
                     if (key === "ArrowUp" || keyCode === 38) {
                         e.preventDefault();
-                        if (tvCursorY <= 40) {
-                            const switchBtn = document.getElementById("switchServerBtn");
-                            const closeBtn = document.getElementById("closePlayerBtn");
-                            if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) switchBtn.focus();
-                            else if (closeBtn) closeBtn.focus();
-                            hideTvCursor();
-                            return;
-                        }
-                        updateTvCursorPosition(tvCursorX, Math.max(30, tvCursorY - step));
+                        updateTvCursorPosition(tvCursorX, Math.max(20, tvCursorY - step));
                         return;
                     }
 
