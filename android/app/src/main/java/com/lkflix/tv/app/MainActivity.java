@@ -272,7 +272,7 @@ public class MainActivity extends BridgeActivity {
                                  + "    var offset = data.offset || (data.args && data.args[0]) || 10;\n"
                                  + "    if (data.func === 'rewind' && offset > 0) offset = -offset;\n"
                                  + "    handleRemoteSeek(offset);\n"
-                                 + "  } else if (data.type === 'togglePlay' || data.func === 'togglePlay' || data.type === 'play' || data.type === 'pause') {\n"
+                                 + "  } else if (data.type === 'togglePlay' || data.func === 'togglePlay' || data === 'togglePlay') {\n"
                                  + "    triggerToggle();\n"
                                  + "  }\n"
                                  + "});\n"
