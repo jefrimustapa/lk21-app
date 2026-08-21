@@ -747,20 +747,41 @@ window.handleNativeDpad = function(nativeKeyCode) {
     // Always bring back header on any remote D-Pad key event
     showPlayerHeaderTemporarily();
 
-    // Only when stream has loaded/playing, pressing UP moves focus to header buttons
+    // When stream has loaded/playing, process TV remote playback controls
     if (isStreamLoaded) {
         const activeEl = document.activeElement;
         const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
         const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
         const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
 
-        if (nativeKeyCode === 19 && !isHeaderBtnFocused) { // DPAD_UP
-            const switchBtn = document.getElementById("switchServerBtn");
-            const closeBtn = document.getElementById("closePlayerBtn");
-            if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
-                switchBtn.focus();
-            } else if (closeBtn) {
-                closeBtn.focus();
+        // DPAD_UP = 19
+        if (nativeKeyCode === 19) {
+            if (!isHeaderBtnFocused) {
+                const switchBtn = document.getElementById("switchServerBtn");
+                const closeBtn = document.getElementById("closePlayerBtn");
+                if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                    switchBtn.focus();
+                } else if (closeBtn) {
+                    closeBtn.focus();
+                }
+            }
+        } else if (nativeKeyCode === 20) { // DPAD_DOWN = 20
+            if (isHeaderBtnFocused) {
+                if (activeEl) activeEl.blur();
+                window.focus();
+            }
+        } else if (nativeKeyCode === 21) { // DPAD_LEFT = 21 (Rewind 10s)
+            if (!isHeaderBtnFocused) {
+                seekPlayerStream(-10);
+            }
+        } else if (nativeKeyCode === 22) { // DPAD_RIGHT = 22 (Fast Forward 10s)
+            if (!isHeaderBtnFocused) {
+                seekPlayerStream(10);
+            }
+        } else if (nativeKeyCode === 23 || nativeKeyCode === 66 || nativeKeyCode === 85 || nativeKeyCode === 126 || nativeKeyCode === 127) {
+            // DPAD_CENTER (23), ENTER (66), MEDIA_PLAY_PAUSE (85), MEDIA_PLAY (126), MEDIA_PAUSE (127)
+            if (!isHeaderBtnFocused) {
+                togglePlayerPlayback();
             }
         }
     }
