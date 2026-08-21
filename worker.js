@@ -39,6 +39,20 @@ export default {
 
         let total, results;
 
+        const ORDER_CLAUSE = `
+          ORDER BY 
+            CASE 
+              WHEN title GLOB '*[12][90][0-9][0-9]' THEN CAST(SUBSTR(title, -4) AS INTEGER)
+              WHEN title GLOB '* 20[0-9][0-9] *' THEN CAST(SUBSTR(title, INSTR(title, ' 20') + 1, 4) AS INTEGER)
+              WHEN title GLOB '* 19[0-9][0-9] *' THEN CAST(SUBSTR(title, INSTR(title, ' 19') + 1, 4) AS INTEGER)
+              WHEN slug GLOB '*[12][90][0-9][0-9]' THEN CAST(SUBSTR(slug, -4) AS INTEGER)
+              WHEN slug GLOB '*-20[0-9][0-9]-*' THEN CAST(SUBSTR(slug, INSTR(slug, '-20') + 1, 4) AS INTEGER)
+              WHEN slug GLOB '*-19[0-9][0-9]-*' THEN CAST(SUBSTR(slug, INSTR(slug, '-19') + 1, 4) AS INTEGER)
+              ELSE 0 
+            END DESC,
+            id DESC
+        `;
+
         if (genre && genre !== "ALL") {
           // Filter by genre using LIKE (genres stored as "Comedy,Action" etc.)
           const countStmt = await env.DB.prepare(
@@ -47,14 +61,14 @@ export default {
           total = countStmt ? countStmt.count : 0;
 
           ({ results } = await env.DB.prepare(
-            "SELECT * FROM movies WHERE genres LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?"
+            `SELECT * FROM movies WHERE genres LIKE ? ${ORDER_CLAUSE} LIMIT ? OFFSET ?`
           ).bind(`%${genre}%`, limit, offset).all());
         } else {
           const countStmt = await env.DB.prepare("SELECT COUNT(*) as count FROM movies").first();
           total = countStmt ? countStmt.count : 0;
 
           ({ results } = await env.DB.prepare(
-            "SELECT * FROM movies ORDER BY id DESC LIMIT ? OFFSET ?"
+            `SELECT * FROM movies ${ORDER_CLAUSE} LIMIT ? OFFSET ?`
           ).bind(limit, offset).all());
         }
 
