@@ -493,9 +493,16 @@ function handlePlayerPauseState() {
 }
 
 function handlePlayerPlayState() {
+    hasPlaybackStarted = true;
     isStreamLoaded = true;
     isStreamPlaying = true;
     hideTvCursor();
+    const cursor = document.getElementById("tvVirtualCursor");
+    if (cursor) {
+        cursor.classList.add("hidden");
+        cursor.style.opacity = "0";
+        cursor.style.display = "none";
+    }
     startPlayerHeaderHideCountdown();
     showPlayerIframeControls(false);
 
@@ -1170,15 +1177,18 @@ let tvCursorY = 0;
 let tvCursorHideTimer = null;
 
 function resetTvCursorHideTimer() {
+    if (hasPlaybackStarted) return;
     if (tvCursorHideTimer) clearTimeout(tvCursorHideTimer);
     const cursor = document.getElementById("tvVirtualCursor");
     if (cursor) {
+        cursor.style.display = "";
         cursor.classList.remove("hidden");
         cursor.style.opacity = "1";
     }
 }
 
 function updateTvCursorPosition(newX, newY) {
+    if (hasPlaybackStarted) return;
     const cursor = document.getElementById("tvVirtualCursor");
     if (!cursor) return;
     const maxX = window.innerWidth || 1920;
@@ -1195,10 +1205,12 @@ function showTvCursor(preservePosition = false) {
     if (hasPlaybackStarted) {
         cursor.classList.add("hidden");
         cursor.style.opacity = "0";
+        cursor.style.display = "none";
         return;
     }
     const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
     if (isTv) {
+        cursor.style.display = "";
         cursor.classList.remove("hidden");
         cursor.style.opacity = "1";
         if (!preservePosition || !tvCursorX || !tvCursorY || tvCursorY < 120) {
@@ -1209,6 +1221,7 @@ function showTvCursor(preservePosition = false) {
         }
     } else {
         cursor.classList.add("hidden");
+        cursor.style.display = "none";
     }
 }
 
@@ -1218,6 +1231,9 @@ function hideTvCursor() {
     if (cursor) {
         cursor.style.opacity = "0";
         cursor.classList.add("hidden");
+        if (hasPlaybackStarted) {
+            cursor.style.display = "none";
+        }
     }
 }
 

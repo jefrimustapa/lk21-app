@@ -276,7 +276,7 @@ public class MainActivity extends BridgeActivity {
                                  + "    }\n"
                                  + "  } catch(e) {}\n"
                                  + "}\n"
-                                 + "setInterval(setupPlaybackDetection, 2500);\n"
+                                 + "setInterval(setupPlaybackDetection, 400);\n"
                                  + "setupPlaybackDetection();\n"
                                  + "window.addEventListener('message', function(e) {\n"
                                  + "  var data = e.data;\n"
