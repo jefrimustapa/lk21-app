@@ -776,6 +776,32 @@ function showPlayerControls() {
     }
 }
 
+let lastLeftDpadTapTime = 0;
+let lastRightDpadTapTime = 0;
+const DPAD_DOUBLE_TAP_THRESHOLD = 450; // ms window for TV remote double-tap
+
+function handlePlayerRewindDoubleTap() {
+    const now = Date.now();
+    if (now - lastLeftDpadTapTime < DPAD_DOUBLE_TAP_THRESHOLD) {
+        lastLeftDpadTapTime = 0;
+        seekPlayerStream(-10);
+    } else {
+        lastLeftDpadTapTime = now;
+        lastRightDpadTapTime = 0;
+    }
+}
+
+function handlePlayerFastForwardDoubleTap() {
+    const now = Date.now();
+    if (now - lastRightDpadTapTime < DPAD_DOUBLE_TAP_THRESHOLD) {
+        lastRightDpadTapTime = 0;
+        seekPlayerStream(10);
+    } else {
+        lastRightDpadTapTime = now;
+        lastLeftDpadTapTime = 0;
+    }
+}
+
 // Bridge hook called directly by Android native dispatchKeyEvent for all D-Pad remote events
 window.handleNativeDpad = function(nativeKeyCode) {
     const playerModal = document.getElementById("playerModal");
@@ -807,13 +833,13 @@ window.handleNativeDpad = function(nativeKeyCode) {
                 if (activeEl) activeEl.blur();
                 window.focus();
             }
-        } else if (nativeKeyCode === 21) { // DPAD_LEFT = 21 (Rewind 10s)
+        } else if (nativeKeyCode === 21) { // DPAD_LEFT = 21 (Double-tap Rewind 10s)
             if (!isHeaderBtnFocused) {
-                seekPlayerStream(-10);
+                handlePlayerRewindDoubleTap();
             }
-        } else if (nativeKeyCode === 22) { // DPAD_RIGHT = 22 (Fast Forward 10s)
+        } else if (nativeKeyCode === 22) { // DPAD_RIGHT = 22 (Double-tap Fast Forward 10s)
             if (!isHeaderBtnFocused) {
-                seekPlayerStream(10);
+                handlePlayerFastForwardDoubleTap();
             }
         } else if (nativeKeyCode === 23 || nativeKeyCode === 66 || nativeKeyCode === 85 || nativeKeyCode === 126 || nativeKeyCode === 127) {
             // DPAD_CENTER (23), ENTER (66), MEDIA_PLAY_PAUSE (85), MEDIA_PLAY (126), MEDIA_PAUSE (127)
@@ -1818,17 +1844,19 @@ function setupEventListeners() {
                 return;
             }
 
-            // Pressing RIGHT fast-forwards 10s
+            // Pressing RIGHT double-tap fast-forwards 10s
             if (key === "ArrowRight" || keyCode === 39) {
                 e.preventDefault();
-                seekPlayerStream(10);
+                showPlayerControls();
+                handlePlayerFastForwardDoubleTap();
                 return;
             }
 
-            // Pressing LEFT rewinds 10s
+            // Pressing LEFT double-tap rewinds 10s
             if (key === "ArrowLeft" || keyCode === 37) {
                 e.preventDefault();
-                seekPlayerStream(-10);
+                showPlayerControls();
+                handlePlayerRewindDoubleTap();
                 return;
             }
 
