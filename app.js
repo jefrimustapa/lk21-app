@@ -1128,9 +1128,8 @@ window.handleNativeDpad = function(nativeKeyCode) {
 
             if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.simulateNativeTouchNormalized === "function") {
                 window.AndroidBridge.simulateNativeTouchNormalized(normX, normY);
-            } else {
-                togglePlayerPlayback();
             }
+            togglePlayerPlayback();
             resetTvCursorHideTimer();
             return;
         }
@@ -2222,9 +2221,8 @@ function setupEventListeners() {
 
                         if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.simulateNativeTouchNormalized === "function") {
                             window.AndroidBridge.simulateNativeTouchNormalized(normX, normY);
-                        } else {
-                            togglePlayerPlayback();
                         }
+                        togglePlayerPlayback();
                         resetTvCursorHideTimer();
                         return;
                     }

@@ -84,13 +84,22 @@ public class MainActivity extends BridgeActivity {
                     String url = request.getUrl().toString();
                     String method = request.getMethod();
                     
-                    // Only intercept top-level GET HTML pages (video.php / iframe)
-                    if ("GET".equalsIgnoreCase(method) && (url.contains("video.php") || url.contains("/iframe/"))) {
+                    // Intercept top-level GET HTML embed pages
+                    boolean isEmbedHtml = (url.contains("video.php") || url.contains("/iframe/") || url.contains("abyssplayer") || url.contains("hydrax") || url.contains("short.ink") || url.contains("filelions") || url.contains("turbovip") || url.contains("turbovid") || url.contains("playcdn") || url.contains("watchcdn") || url.contains("/play/"))
+                        && !url.endsWith(".js") && !url.endsWith(".css") && !url.endsWith(".m3u8") && !url.endsWith(".ts") && !url.endsWith(".png") && !url.endsWith(".jpg") && !url.endsWith(".webp") && !url.endsWith(".ico");
+
+                    if ("GET".equalsIgnoreCase(method) && isEmbedHtml) {
                         try {
                             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                             conn.setRequestMethod("GET");
                             conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 9; MiBOX4 Build/PI; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36");
-                            conn.setRequestProperty("Referer", "https://tv12.lk21official.cc/");
+                            
+                            String reqReferer = request.getRequestHeaders() != null ? request.getRequestHeaders().get("Referer") : null;
+                            if (reqReferer != null && !reqReferer.isEmpty()) {
+                                conn.setRequestProperty("Referer", reqReferer);
+                            } else {
+                                conn.setRequestProperty("Referer", "https://tv12.lk21official.cc/");
+                            }
 
                             String mimeType = conn.getContentType();
                             if (mimeType == null) mimeType = "text/html";
@@ -159,6 +168,8 @@ public class MainActivity extends BridgeActivity {
                                  + "        return;\n"
                                  + "      }\n"
                                  + "    } catch(p2pErr) {}\n"
+                                 + "    var playBtn = document.querySelector('.vjs-big-play-button') || document.querySelector('.jw-display-icon-container') || document.querySelector('.play-button') || document.querySelector('.btn-play') || document.querySelector('#play') || document.querySelector('svg') || document.querySelector('.jw-media') || document.querySelector('.player') || document.querySelector('#player');\n"
+                                 + "    if (playBtn) { try { playBtn.click(); } catch(e){} }\n"
                                  + "    var videos = document.querySelectorAll('video');\n"
                                  + "    if (videos.length > 0) {\n"
                                  + "      var anyPlaying = false;\n"
@@ -173,8 +184,6 @@ public class MainActivity extends BridgeActivity {
                                  + "      postToParent({ type: isNowPlaying ? 'play' : 'pause', state: isNowPlaying ? 'playing' : 'paused' });\n"
                                  + "      return;\n"
                                  + "    }\n"
-                                 + "    var clickTarget = document.querySelector('.jw-video') || document.querySelector('.jw-media') || document.querySelector('.player') || document.querySelector('#player');\n"
-                                 + "    if (clickTarget) { clickTarget.click(); }\n"
                                  + "  } catch(e) {}\n"
                                  + "}\n"
                                  + "function handleRemoteSeek(offset) {\n"
@@ -194,8 +203,10 @@ public class MainActivity extends BridgeActivity {
                                  + "        return;\n"
                                  + "      }\n"
                                  + "    }\n"
-                                 + "    var v = document.querySelector('video');\n"
-                                 + "    if (v) { v.currentTime = Math.max(0, v.currentTime + offset); }\n"
+                                 + "    var videos = document.querySelectorAll('video');\n"
+                                 + "    for (var i = 0; i < videos.length; i++) {\n"
+                                 + "      videos[i].currentTime = Math.max(0, videos[i].currentTime + offset);\n"
+                                 + "    }\n"
                                  + "  } catch(e) {}\n"
                                  + "}\n"
                                  + "function handleSeekToPosition(targetSeconds) {\n"
@@ -211,30 +222,39 @@ public class MainActivity extends BridgeActivity {
                                  + "        return;\n"
                                  + "      }\n"
                                  + "    }\n"
-                                 + "    var v = document.querySelector('video');\n"
-                                 + "    if (v) { v.currentTime = targetSeconds; }\n"
+                                 + "    var videos = document.querySelectorAll('video');\n"
+                                 + "    for (var i = 0; i < videos.length; i++) {\n"
+                                 + "      videos[i].currentTime = targetSeconds;\n"
+                                 + "    }\n"
                                  + "  } catch(e) {}\n"
                                  + "}\n"
                                  + "function setupPlaybackDetection() {\n"
                                  + "  try {\n"
-                                 + "    var v = document.querySelector('video');\n"
-                                 + "    if (v && !v.__lkBound) {\n"
-                                 + "      v.__lkBound = true;\n"
-                                 + "      v.addEventListener('playing', function() {\n"
-                                 + "        postToParent({ type: 'play', state: 'playing' });\n"
-                                 + "      });\n"
-                                 + "      v.addEventListener('pause', function() {\n"
-                                 + "        postToParent({ type: 'pause', state: 'paused' });\n"
-                                 + "      });\n"
-                                 + "      v.addEventListener('timeupdate', function() {\n"
-                                 + "        try {\n"
-                                 + "          postToParent({\n"
-                                 + "            type: 'timeUpdate',\n"
-                                 + "            currentTime: v.currentTime,\n"
-                                 + "            duration: v.duration\n"
+                                 + "    var videos = document.querySelectorAll('video');\n"
+                                 + "    for (var i = 0; i < videos.length; i++) {\n"
+                                 + "      (function(v) {\n"
+                                 + "        if (!v.__lkBound) {\n"
+                                 + "          v.__lkBound = true;\n"
+                                 + "          v.addEventListener('playing', function() {\n"
+                                 + "            postToParent({ type: 'play', state: 'playing' });\n"
                                  + "          });\n"
-                                 + "        } catch(err){}\n"
-                                 + "      });\n"
+                                 + "          v.addEventListener('play', function() {\n"
+                                 + "            postToParent({ type: 'play', state: 'playing' });\n"
+                                 + "          });\n"
+                                 + "          v.addEventListener('pause', function() {\n"
+                                 + "            postToParent({ type: 'pause', state: 'paused' });\n"
+                                 + "          });\n"
+                                 + "          v.addEventListener('timeupdate', function() {\n"
+                                 + "            try {\n"
+                                 + "              postToParent({\n"
+                                 + "                type: 'timeUpdate',\n"
+                                 + "                currentTime: v.currentTime,\n"
+                                 + "                duration: v.duration || 0\n"
+                                 + "              });\n"
+                                 + "            } catch(err){}\n"
+                                 + "          });\n"
+                                 + "        }\n"
+                                 + "      })(videos[i]);\n"
                                  + "    }\n"
                                  + "    if (window.jwplayer && typeof window.jwplayer === 'function') {\n"
                                  + "      var jw = window.jwplayer();\n"
