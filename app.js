@@ -1024,8 +1024,15 @@ window.addEventListener("message", (event) => {
                 showTvPlayerController(true);
             }
         } else if (data.type === "pause" || data.event === "pause" || data.state === "paused") {
-            handlePlayerPauseState();
+            if (window.__pauseDebounceTimer) clearTimeout(window.__pauseDebounceTimer);
+            window.__pauseDebounceTimer = setTimeout(() => {
+                handlePlayerPauseState();
+            }, 350);
         } else if (data.type === "play" || data.event === "play" || data.state === "playing") {
+            if (window.__pauseDebounceTimer) {
+                clearTimeout(window.__pauseDebounceTimer);
+                window.__pauseDebounceTimer = null;
+            }
             handlePlayerPlayState();
         }
     } catch (e) {}
@@ -1342,14 +1349,17 @@ function openPlayerModal(movie) {
     // Auto hide top header overlay over stream after 10 seconds of inactivity
     showPlayerHeaderTemporarily();
 
-    // Re-show header when user touches screen, taps, or moves mouse/TV remote over player modal
-    ["touchstart", "touchend", "touchmove", "pointerdown", "pointerup", "pointermove", "mousemove", "mousedown", "click"].forEach((evtName) => {
-        modal.addEventListener(evtName, () => {
-            if (!modal.classList.contains("hidden")) {
-                showPlayerHeaderTemporarily();
-            }
-        }, { passive: true, capture: true });
-    });
+    // Re-show header when user touches screen on mobile/desktop
+    const isTvMode = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
+    if (!isTvMode) {
+        ["touchstart", "click"].forEach((evtName) => {
+            modal.addEventListener(evtName, () => {
+                if (!modal.classList.contains("hidden")) {
+                    showPlayerHeaderTemporarily();
+                }
+            }, { passive: true, capture: true });
+        });
+    }
 
     // Push history state so Android hardware back button / browser back closes player & returns to detail/catalog
     history.pushState({ modalOpen: "player" }, "");
