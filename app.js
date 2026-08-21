@@ -407,28 +407,27 @@ function showPlayerHeaderPersistent() {
         playerHeaderTimer = null;
     }
     header.classList.remove("fade-out");
+    showTvCursor(true);
 }
 
 function startPlayerHeaderHideCountdown() {
     const header = document.querySelector(".player-header");
     if (!header) return;
     header.classList.remove("fade-out");
+    showTvCursor(true);
     if (playerHeaderTimer) clearTimeout(playerHeaderTimer);
     
     playerHeaderTimer = setTimeout(() => {
         const modal = document.getElementById("playerModal");
-        if (modal && !modal.classList.contains("hidden") && isStreamPlaying) {
+        if (modal && !modal.classList.contains("hidden")) {
             header.classList.add("fade-out");
+            hideTvCursor();
         }
     }, 4000);
 }
 
 function showPlayerHeaderTemporarily() {
-    if (!isStreamPlaying && isStreamLoaded) {
-        showPlayerHeaderPersistent();
-    } else {
-        startPlayerHeaderHideCountdown();
-    }
+    startPlayerHeaderHideCountdown();
 }
 
 function showPlayerIframeControls(persistent = false) {
@@ -831,67 +830,93 @@ window.handleNativeDpad = function(nativeKeyCode) {
     const playerModal = document.getElementById("playerModal");
     if (!playerModal || playerModal.classList.contains("hidden")) return;
 
-    // When stream has loaded/playing, process TV remote playback controls
-    if (isStreamLoaded) {
-        const activeEl = document.activeElement;
-        const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
-        const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
-        const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
+    const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
+    if (!isTv) return;
 
-        if (isStreamPlaying) {
-            // === WHEN PLAYING ===
-            // D-Pad UP, DOWN, LEFT, RIGHT do NOT show the navbar/header
-            if (nativeKeyCode === 21) { // DPAD_LEFT (Rewind 10s)
-                seekPlayerStream(-10);
-            } else if (nativeKeyCode === 22) { // DPAD_RIGHT (Fast Forward 10s)
-                seekPlayerStream(10);
-            } else if (nativeKeyCode === 23 || nativeKeyCode === 66 || nativeKeyCode === 85 || nativeKeyCode === 126 || nativeKeyCode === 127) {
-                // OK / Enter -> initiates pause
-                togglePlayerPlayback();
+    const activeEl = document.activeElement;
+    const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
+    const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
+    const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
+
+    // 1. If Header button is currently focused:
+    if (isHeaderBtnFocused) {
+        if (nativeKeyCode === 20) { // DPAD_DOWN: Return to video area and restore virtual cursor
+            if (activeEl) activeEl.blur();
+            showTvCursor(true);
+            updateTvCursorPosition(tvCursorX, Math.max(120, tvCursorY));
+            showPlayerHeaderTemporarily();
+            return;
+        } else if (nativeKeyCode === 21) { // DPAD_LEFT: Focus Back button
+            const closeBtn = document.getElementById("closePlayerBtn");
+            if (closeBtn) closeBtn.focus();
+            return;
+        } else if (nativeKeyCode === 22) { // DPAD_RIGHT: Focus Server button if visible
+            const switchBtn = document.getElementById("switchServerBtn");
+            if (switchBtn && switchBtn.style.display !== "none") switchBtn.focus();
+            return;
+        } else if (nativeKeyCode === 23 || nativeKeyCode === 66) { // OK / Enter
+            if (activeEl && typeof activeEl.click === "function") {
+                activeEl.click();
             }
-        } else {
-            // === WHEN PAUSED ===
-            // Header is persistent; D-Pad UP/DOWN moves focus between header and media controller
-            if (nativeKeyCode === 19) { // DPAD_UP = 19
-                if (!isHeaderBtnFocused) {
-                    const switchBtn = document.getElementById("switchServerBtn");
-                    const closeBtn = document.getElementById("closePlayerBtn");
-                    if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
-                        switchBtn.focus();
-                    } else if (closeBtn) {
-                        closeBtn.focus();
-                    }
-                }
-            } else if (nativeKeyCode === 20) { // DPAD_DOWN = 20
-                if (isHeaderBtnFocused) {
-                    if (activeEl) activeEl.blur();
-                    window.focus();
-                }
-            } else if (nativeKeyCode === 21) { // DPAD_LEFT = 21
-                if (isHeaderBtnFocused) {
-                    const closeBtn = document.getElementById("closePlayerBtn");
-                    if (closeBtn) closeBtn.focus();
-                } else {
-                    seekPlayerStream(-10);
-                }
-            } else if (nativeKeyCode === 22) { // DPAD_RIGHT = 22
-                if (isHeaderBtnFocused) {
-                    const switchBtn = document.getElementById("switchServerBtn");
-                    if (switchBtn && switchBtn.style.display !== "none") switchBtn.focus();
-                } else {
-                    seekPlayerStream(10);
-                }
-            } else if (nativeKeyCode === 23 || nativeKeyCode === 66 || nativeKeyCode === 85 || nativeKeyCode === 126 || nativeKeyCode === 127) {
-                // OK / Enter
-                if (isHeaderBtnFocused) {
-                    if (activeEl && typeof activeEl.click === "function") {
-                        activeEl.click();
-                    }
-                } else {
-                    togglePlayerPlayback(); // Resumes playback!
-                }
-            }
+            return;
         }
+        return;
+    }
+
+    // 2. Cursor navigation mode:
+    const cursorEl = document.getElementById("tvVirtualCursor");
+    let isCursorVisible = cursorEl && !cursorEl.classList.contains("hidden") && cursorEl.style.opacity !== "0";
+    const step = 25; // 25px per D-Pad step
+
+    // If cursor/header is currently hidden, ANY D-pad action brings it back immediately
+    if (!isCursorVisible) {
+        showPlayerHeaderTemporarily();
+        showTvCursor(true);
+        isCursorVisible = true;
+    }
+
+    showPlayerHeaderTemporarily();
+
+    if (nativeKeyCode === 19) { // DPAD_UP
+        const newY = tvCursorY - step;
+        if (newY <= 55) { // Reached top header bar!
+            showPlayerHeaderPersistent();
+            const screenW = window.innerWidth || 1920;
+            const switchBtn = document.getElementById("switchServerBtn");
+            const closeBtn = document.getElementById("closePlayerBtn");
+            if (tvCursorX > screenW / 2 && switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                switchBtn.focus();
+            } else if (closeBtn) {
+                closeBtn.focus();
+            }
+            hideTvCursor();
+            return;
+        }
+        updateTvCursorPosition(tvCursorX, newY);
+        return;
+    } else if (nativeKeyCode === 20) { // DPAD_DOWN
+        updateTvCursorPosition(tvCursorX, tvCursorY + step);
+        return;
+    } else if (nativeKeyCode === 21) { // DPAD_LEFT
+        updateTvCursorPosition(tvCursorX - step, tvCursorY);
+        return;
+    } else if (nativeKeyCode === 22) { // DPAD_RIGHT
+        updateTvCursorPosition(tvCursorX + step, tvCursorY);
+        return;
+    } else if (nativeKeyCode === 23 || nativeKeyCode === 66) { // DPAD_CENTER / ENTER / OK
+        if (cursorEl) {
+            cursorEl.classList.add("clicking");
+            setTimeout(() => cursorEl.classList.remove("clicking"), 220);
+        }
+        const screenW = window.innerWidth || 1920;
+        const screenH = window.innerHeight || 1080;
+        const normX = tvCursorX / screenW;
+        const normY = tvCursorY / screenH;
+
+        if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.simulateNativeTouchNormalized === "function") {
+            window.AndroidBridge.simulateNativeTouchNormalized(normX, normY);
+        }
+        return;
     }
 };
 
@@ -1070,10 +1095,10 @@ let tvCursorHideTimer = null;
 function resetTvCursorHideTimer() {
     if (tvCursorHideTimer) clearTimeout(tvCursorHideTimer);
     const cursor = document.getElementById("tvVirtualCursor");
-    if (cursor) cursor.style.opacity = "1";
-    tvCursorHideTimer = setTimeout(() => {
-        if (cursor) cursor.style.opacity = "0";
-    }, 4000);
+    if (cursor) {
+        cursor.classList.remove("hidden");
+        cursor.style.opacity = "1";
+    }
 }
 
 function updateTvCursorPosition(newX, newY) {
@@ -1088,7 +1113,6 @@ function updateTvCursorPosition(newX, newY) {
 }
 
 function showTvCursor(preservePosition = false) {
-    if (isStreamLoaded) return; // Do not show cursor if stream has already loaded/playing
     const cursor = document.getElementById("tvVirtualCursor");
     if (!cursor) return;
     const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
@@ -1097,7 +1121,7 @@ function showTvCursor(preservePosition = false) {
         cursor.style.opacity = "1";
         if (!preservePosition || !tvCursorX || !tvCursorY || tvCursorY < 120) {
             // Position near center / play button
-            updateTvCursorPosition(window.innerWidth / 2, window.innerHeight / 2);
+            updateTvCursorPosition((window.innerWidth || 1920) / 2, (window.innerHeight || 1080) / 2);
         } else {
             updateTvCursorPosition(tvCursorX, tvCursorY);
         }
@@ -1110,7 +1134,6 @@ function hideTvCursor() {
     if (tvCursorHideTimer) clearTimeout(tvCursorHideTimer);
     const cursor = document.getElementById("tvVirtualCursor");
     if (cursor) {
-        cursor.classList.add("hidden");
         cursor.style.opacity = "0";
     }
 }
@@ -1730,12 +1753,7 @@ function setupEventListeners() {
             const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
             const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
 
-            // Only show temporary header when NOT actively playing
-            if (!isStreamLoaded) {
-                showPlayerHeaderTemporarily();
-            }
-
-            // === 2. IF FOCUS IS ON BUTTONS IN THE HEADER ===
+            // === 1. IF FOCUS IS ON BUTTONS IN THE HEADER ===
             if (isHeaderBtnFocused) {
                 if (key === "Enter" || keyCode === 13 || keyCode === 23 || keyCode === 66 || key === " " || keyCode === 32) {
                     e.preventDefault();
@@ -1774,9 +1792,9 @@ function setupEventListeners() {
                     if (activeEl) activeEl.blur();
                     if (isTv) {
                         window.focus();
-                        if (!isStreamLoaded) {
-                            showTvCursor(true);
-                        }
+                        showTvCursor(true);
+                        updateTvCursorPosition(tvCursorX, Math.max(120, tvCursorY));
+                        showPlayerHeaderTemporarily();
                     } else {
                         const iframe = document.getElementById("videoIframe");
                         const nativeVideo = document.getElementById("nativeVideoPlayer");
@@ -1790,39 +1808,47 @@ function setupEventListeners() {
                     e.preventDefault();
                     return;
                 }
+                return;
             }
 
-            // === 3. VIRTUAL POINTER MODE (ONLY BEFORE STREAM HAS LOADED / BOT VERIFICATION) ===
-            if (isTv && !isStreamLoaded) {
+            // === 2. VIRTUAL POINTER MODE (ACTIVE IN TV MODE ACROSS PLAYBACK) ===
+            if (isTv) {
                 const cursorEl = document.getElementById("tvVirtualCursor");
                 let isCursorVisible = cursorEl && !cursorEl.classList.contains("hidden") && cursorEl.style.opacity !== "0";
+                const step = 25; // Pixels per D-Pad press
 
-                const step = 45; // Pixels per D-Pad press
-
-                // If pointer is hidden/inactive before stream loads, ANY D-pad direction brings it back immediately
+                // If pointer is hidden, ANY D-pad press brings it back and shows header
                 if (!isCursorVisible) {
                     if (key === "ArrowUp" || keyCode === 38 ||
                         key === "ArrowDown" || keyCode === 40 ||
                         key === "ArrowLeft" || keyCode === 37 ||
                         key === "ArrowRight" || keyCode === 39) {
                         e.preventDefault();
-                        showTvCursor();
+                        showPlayerHeaderTemporarily();
+                        showTvCursor(true);
                         isCursorVisible = true;
                     }
                 }
 
                 if (isCursorVisible) {
+                    showPlayerHeaderTemporarily();
+
                     if (key === "ArrowUp" || keyCode === 38) {
                         e.preventDefault();
-                        if (tvCursorY <= 40) {
+                        const newY = tvCursorY - step;
+                        if (newY <= 55) {
+                            showPlayerHeaderPersistent();
                             const switchBtn = document.getElementById("switchServerBtn");
                             const closeBtn = document.getElementById("closePlayerBtn");
-                            if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) switchBtn.focus();
-                            else if (closeBtn) closeBtn.focus();
+                            if (tvCursorX > (window.innerWidth || 1920) / 2 && switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                                switchBtn.focus();
+                            } else if (closeBtn) {
+                                closeBtn.focus();
+                            }
                             hideTvCursor();
                             return;
                         }
-                        updateTvCursorPosition(tvCursorX, Math.max(30, tvCursorY - step));
+                        updateTvCursorPosition(tvCursorX, newY);
                         return;
                     }
 
@@ -1863,76 +1889,17 @@ function setupEventListeners() {
                         } else {
                             togglePlayerPlayback();
                         }
-                        resetTvCursorHideTimer();
                         return;
                     }
                 }
+                return;
             }
 
-            // === 4. ACTIVE STREAM PLAYBACK CONTROLS (STREAM IS PLAYING / LOADED) ===
-            if (isStreamLoaded) {
-                if (isStreamPlaying) {
-                    // When playing, D-Pad UP/DOWN/LEFT/RIGHT does NOT show navbar
-                    if (key === "ArrowLeft" || keyCode === 37) {
-                        e.preventDefault();
-                        seekPlayerStream(-10);
-                        return;
-                    }
-                    if (key === "ArrowRight" || keyCode === 39) {
-                        e.preventDefault();
-                        seekPlayerStream(10);
-                        return;
-                    }
-                    if (key === "Enter" || keyCode === 13 || keyCode === 23 || keyCode === 66 || key === " " || keyCode === 32) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        togglePlayerPlayback();
-                        return;
-                    }
-                    if (key === "ArrowUp" || keyCode === 38 || key === "ArrowDown" || keyCode === 40) {
-                        e.preventDefault();
-                        return;
-                    }
-                } else {
-                    // When paused, header is persistent; support UP/DOWN focus switching
-                    if (isHeaderBtnFocused && (key === "ArrowDown" || keyCode === 40)) {
-                        e.preventDefault();
-                        if (activeEl) activeEl.blur();
-                        window.focus();
-                        return;
-                    }
-
-                    if (!isHeaderBtnFocused && (key === "ArrowUp" || keyCode === 38)) {
-                        e.preventDefault();
-                        const switchBtn = document.getElementById("switchServerBtn");
-                        const closeBtn = document.getElementById("closePlayerBtn");
-                        if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
-                            switchBtn.focus();
-                        } else if (closeBtn) {
-                            closeBtn.focus();
-                        }
-                        return;
-                    }
-
-                    if (!isHeaderBtnFocused && (key === "Enter" || keyCode === 13 || keyCode === 23 || keyCode === 66 || key === " " || keyCode === 32)) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        togglePlayerPlayback();
-                        return;
-                    }
-
-                    if (!isHeaderBtnFocused && (key === "ArrowRight" || keyCode === 39)) {
-                        e.preventDefault();
-                        seekPlayerStream(10);
-                        return;
-                    }
-
-                    if (!isHeaderBtnFocused && (key === "ArrowLeft" || keyCode === 37)) {
-                        e.preventDefault();
-                        seekPlayerStream(-10);
-                        return;
-                    }
-                }
+            // Non-TV fallback
+            if (key === "Escape" || keyCode === 27) {
+                e.preventDefault();
+                closePlayerModal();
+                return;
             }
         }
 
