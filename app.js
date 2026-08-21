@@ -1392,11 +1392,20 @@ function closePlayerModal(fromHistory = false) {
     }
     refreshFocusableElements();
 
-    // Restore focus to detailPlayBtn or detailBackBtn if detail view is still open
+    // Restore focus to detailPlayBtn if detail view is still open, otherwise focus Watch Now on billboard
     const detailModal = document.getElementById("detailModal");
     if (detailModal && !detailModal.classList.contains("hidden")) {
         const detailPlay = document.getElementById("detailPlayBtn");
         if (detailPlay) detailPlay.focus();
+    } else {
+        const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
+        if (isTv) {
+            const heroPlayBtn = document.getElementById("heroPlayBtn");
+            if (heroPlayBtn) {
+                heroPlayBtn.focus();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
     }
 }
 
@@ -1643,12 +1652,22 @@ function closeDetailModal(fromHistory = false) {
         modal.style.display = "none";
         refreshFocusableElements();
         
+        const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
+        if (isTv) {
+            const heroPlayBtn = document.getElementById("heroPlayBtn");
+            if (heroPlayBtn) {
+                heroPlayBtn.focus();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+        }
+
         // Restore focus to the movie card or hero button that opened the detail view
         if (lastFocusedElement && document.body.contains(lastFocusedElement)) {
             lastFocusedElement.focus();
             lastFocusedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
         } else {
-            const firstCard = document.querySelector("#mainMovieGrid .movie-card, #heroPlayBtn");
+            const firstCard = document.querySelector("#heroPlayBtn, #mainMovieGrid .movie-card");
             if (firstCard) firstCard.focus();
         }
     }, 350);
