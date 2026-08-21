@@ -150,13 +150,8 @@ function renderRelatedMovies(movies) {
 }
 
 function goBack() {
-    console.log("[Detail] goBack requested");
-    if (window.history.length > 1) {
-        window.history.back();
-    }
-    setTimeout(() => {
-        window.location.href = "index.html";
-    }, 120);
+    console.log("[Detail] Navigating directly to home");
+    window.location.href = "index.html";
 }
 
 window.handleNativeBack = goBack;
