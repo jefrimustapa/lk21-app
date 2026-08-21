@@ -499,7 +499,7 @@ function handlePlayerPlayState() {
 
 function togglePlayerPlayback() {
     const now = Date.now();
-    if (now - lastTogglePlaybackTime < 400) return;
+    if (now - lastTogglePlaybackTime < 500) return;
     lastTogglePlaybackTime = now;
 
     const nativeVideo = document.getElementById("nativeVideoPlayer");
@@ -519,10 +519,7 @@ function togglePlayerPlayback() {
     const iframe = document.getElementById("videoIframe");
     if (iframe && iframe.contentWindow) {
         try {
-            iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "togglePlay" }), "*");
             iframe.contentWindow.postMessage(JSON.stringify({ type: "togglePlay" }), "*");
-            iframe.contentWindow.postMessage({ type: "togglePlay" }, "*");
-            iframe.contentWindow.postMessage("togglePlay", "*");
         } catch (e) {
             console.warn("Iframe toggle error:", e);
         }
