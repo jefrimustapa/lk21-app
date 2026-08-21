@@ -267,6 +267,8 @@ function appendMoviesToGrid(movies) {
 
         grid.appendChild(card);
     });
+
+    refreshFocusableElements();
 }
 
 function updateCatalogTitle() {
@@ -1634,12 +1636,25 @@ function navigateDpad(direction) {
         }
     }
 
+    function checkAndTriggerInfiniteLoad(targetEl) {
+        if (!targetEl || !targetEl.classList.contains("movie-card")) return;
+        const allCards = Array.from(document.querySelectorAll("#mainMovieGrid .movie-card"));
+        const idx = allCards.indexOf(targetEl);
+        if (idx !== -1 && idx >= allCards.length - 12) {
+            if (!isLoading && hasMore) {
+                console.log(`[Dpad] Pre-fetching page ${currentPage} at card index ${idx}/${allCards.length}`);
+                loadMovies(currentPage, false);
+            }
+        }
+    }
+
     if (bestNextEl) {
         bestNextEl.focus();
         if (bestNextEl.id === 'heroPlayBtn' || bestNextEl.id === 'heroInfoBtn' || bestNextEl.closest('.hero-billboard')) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
             bestNextEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            checkAndTriggerInfiniteLoad(bestNextEl);
         }
     } else {
         // Fallback 1: If moving UP from the top row of movie cards and no element found directly above,
@@ -1663,18 +1678,34 @@ function navigateDpad(direction) {
             if (firstCard) {
                 firstCard.focus();
                 firstCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                checkAndTriggerInfiniteLoad(firstCard);
                 return;
             }
         }
 
-        // Fallback 3: If moving DOWN from a movie card and spatial check missed the card below,
-        // move to the card in next row DOM order
+        // Fallback 3: If moving DOWN from a movie card and spatial check reached the bottom or missed,
+        // move to the next card or load the next page batch immediately
         if (direction === "DOWN" && currentEl.classList.contains('movie-card')) {
             const allCards = Array.from(document.querySelectorAll('#mainMovieGrid .movie-card'));
             const cardIdx = allCards.indexOf(currentEl);
-            if (cardIdx !== -1 && cardIdx + 4 < allCards.length) {
-                allCards[cardIdx + 4].focus();
-                allCards[cardIdx + 4].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            if (cardIdx !== -1) {
+                if (cardIdx + 4 < allCards.length) {
+                    allCards[cardIdx + 4].focus();
+                    allCards[cardIdx + 4].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                    checkAndTriggerInfiniteLoad(allCards[cardIdx + 4]);
+                } else if (!isLoading && hasMore) {
+                    loadMovies(currentPage, false).then(() => {
+                        refreshFocusableElements();
+                        const updatedCards = Array.from(document.querySelectorAll('#mainMovieGrid .movie-card'));
+                        if (updatedCards[cardIdx + 4]) {
+                            updatedCards[cardIdx + 4].focus();
+                            updatedCards[cardIdx + 4].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                        } else if (updatedCards[cardIdx + 1]) {
+                            updatedCards[cardIdx + 1].focus();
+                            updatedCards[cardIdx + 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                        }
+                    });
+                }
             }
         }
     }
