@@ -278,6 +278,9 @@ function setupDetailListeners() {
     };
 
     document.addEventListener("keydown", (e) => {
+        if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.isTv === "function" && window.AndroidBridge.isTv()) {
+            return;
+        }
         const key = e.key;
         const keyCode = e.keyCode;
         if (keyCode === 4 || key === "Escape" || key === "Backspace") window.handleNativeDpad(4);

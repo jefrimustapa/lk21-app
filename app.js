@@ -1745,6 +1745,11 @@ function setupEventListeners() {
 
     // Keyboard Event Listener for Android TV Remote Keys & Player Controls
     document.addEventListener("keydown", (e) => {
+        // In Android TV app, key events are handled exclusively by window.handleNativeDpad to prevent duplicate double-jumps
+        if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.isTv === "function" && window.AndroidBridge.isTv()) {
+            return;
+        }
+
         const playerModal = document.getElementById("playerModal");
         const isPlayerOpen = playerModal && !playerModal.classList.contains("hidden");
 

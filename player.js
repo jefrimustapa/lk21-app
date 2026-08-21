@@ -601,6 +601,9 @@ window.handleNativeDpad = function(keyCode) {
 };
 
 function handleKeyDown(e) {
+    if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.isTv === "function" && window.AndroidBridge.isTv()) {
+        return;
+    }
     const key = e.key;
     const keyCode = e.keyCode;
 
