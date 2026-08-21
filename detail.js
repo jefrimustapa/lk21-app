@@ -144,7 +144,7 @@ function renderRelatedMovies(movies) {
             const url = card.getAttribute("data-url");
             const title = card.getAttribute("data-title");
             const poster = card.getAttribute("data-poster");
-            window.location.href = `detail.html?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}&poster=${encodeURIComponent(poster)}`;
+            window.location.replace(`detail.html?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}&poster=${encodeURIComponent(poster)}`);
         });
     });
 }

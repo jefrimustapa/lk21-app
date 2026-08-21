@@ -333,8 +333,10 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public boolean dispatchKeyEvent(android.view.KeyEvent event) {
-        if (event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
-            final int keyCode = event.getKeyCode();
+        final int keyCode = event.getKeyCode();
+        final int action = event.getAction();
+
+        if (action == android.view.KeyEvent.ACTION_DOWN) {
             if (keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP ||
                 keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN ||
                 keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT ||
@@ -356,19 +358,24 @@ public class MainActivity extends BridgeActivity {
                     });
                 }
                 
-                // When in TV mode, consume D-pad and media keys so WebView does not trigger duplicate spatial focus jumps
-                if (nativeIsTv && (
-                    keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP ||
-                    keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN ||
-                    keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT ||
-                    keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT ||
-                    keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER ||
-                    keyCode == android.view.KeyEvent.KEYCODE_ENTER ||
-                    keyCode == android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ||
-                    keyCode == android.view.KeyEvent.KEYCODE_MEDIA_PLAY ||
-                    keyCode == android.view.KeyEvent.KEYCODE_MEDIA_PAUSE)) {
+                // When in TV mode, consume D-pad, media, and BACK keys so WebView / Chromium does not execute native history / focus
+                if (nativeIsTv) {
                     return true;
                 }
+            }
+        } else if (action == android.view.KeyEvent.ACTION_UP) {
+            if (nativeIsTv && (
+                keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP ||
+                keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN ||
+                keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT ||
+                keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT ||
+                keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER ||
+                keyCode == android.view.KeyEvent.KEYCODE_ENTER ||
+                keyCode == android.view.KeyEvent.KEYCODE_BACK ||
+                keyCode == android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ||
+                keyCode == android.view.KeyEvent.KEYCODE_MEDIA_PLAY ||
+                keyCode == android.view.KeyEvent.KEYCODE_MEDIA_PAUSE)) {
+                return true;
             }
         }
         return super.dispatchKeyEvent(event);
