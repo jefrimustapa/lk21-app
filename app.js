@@ -807,9 +807,6 @@ window.handleNativeDpad = function(nativeKeyCode) {
     const playerModal = document.getElementById("playerModal");
     if (!playerModal || playerModal.classList.contains("hidden")) return;
 
-    // Always reveal controls and header on any remote D-Pad key event
-    showPlayerControls();
-
     // When stream has loaded/playing, process TV remote playback controls
     if (isStreamLoaded) {
         const activeEl = document.activeElement;
@@ -817,27 +814,11 @@ window.handleNativeDpad = function(nativeKeyCode) {
         const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
         const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
 
-        // DPAD_UP = 19
-        if (nativeKeyCode === 19) {
-            if (!isHeaderBtnFocused) {
-                const switchBtn = document.getElementById("switchServerBtn");
-                const closeBtn = document.getElementById("closePlayerBtn");
-                if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
-                    switchBtn.focus();
-                } else if (closeBtn) {
-                    closeBtn.focus();
-                }
-            }
-        } else if (nativeKeyCode === 20) { // DPAD_DOWN = 20
-            if (isHeaderBtnFocused) {
-                if (activeEl) activeEl.blur();
-                window.focus();
-            }
-        } else if (nativeKeyCode === 21) { // DPAD_LEFT = 21 (Double-tap Rewind 10s)
+        if (nativeKeyCode === 21) { // DPAD_LEFT = 21 (Rewind 10s)
             if (!isHeaderBtnFocused) {
                 handlePlayerRewindDoubleTap();
             }
-        } else if (nativeKeyCode === 22) { // DPAD_RIGHT = 22 (Double-tap Fast Forward 10s)
+        } else if (nativeKeyCode === 22) { // DPAD_RIGHT = 22 (Fast Forward 10s)
             if (!isHeaderBtnFocused) {
                 handlePlayerFastForwardDoubleTap();
             }
