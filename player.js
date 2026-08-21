@@ -3,7 +3,7 @@
  * Standalone, 100% Isolated Cinema Playback Engine for TV & Mobile
  */
 
-const API_BASE = "https://lk21-app.mustapajefri.workers.dev";
+const API_BASE = "https://lk21-api.lkapp.workers.dev";
 
 // State
 let activeMovie = null;
@@ -445,6 +445,15 @@ function togglePlay() {
 
 // Native D-Pad Bridge Hook
 window.handleNativeDpad = function(keyCode) {
+    if (keyCode === 4) { // Hardware BACK button
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = "index.html";
+        }
+        return;
+    }
+
     const activeEl = document.activeElement;
     const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
     const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";

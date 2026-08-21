@@ -341,6 +341,7 @@ public class MainActivity extends BridgeActivity {
                 keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT ||
                 keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER ||
                 keyCode == android.view.KeyEvent.KEYCODE_ENTER ||
+                keyCode == android.view.KeyEvent.KEYCODE_BACK ||
                 keyCode == android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ||
                 keyCode == android.view.KeyEvent.KEYCODE_MEDIA_PLAY ||
                 keyCode == android.view.KeyEvent.KEYCODE_MEDIA_PAUSE) {
@@ -362,6 +363,24 @@ public class MainActivity extends BridgeActivity {
             }
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public void onBackPressed() {
+        WebView webView = getBridge().getWebView();
+        if (webView != null) {
+            String currentUrl = webView.getUrl();
+            if (currentUrl != null && (currentUrl.contains("player.html") || currentUrl.contains("detail.html"))) {
+                if (webView.canGoBack()) {
+                    webView.goBack();
+                    return;
+                } else {
+                    webView.loadUrl("https://localhost/index.html");
+                    return;
+                }
+            }
+        }
+        super.onBackPressed();
     }
 
     @Override
