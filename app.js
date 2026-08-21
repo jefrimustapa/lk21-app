@@ -1294,7 +1294,7 @@ function openDetailModal(movie) {
 
 function openPlayerModal(movie) {
     if (!movie) return;
-    const url = `player.html?url=${encodeURIComponent(movie.url || '')}&title=${encodeURIComponent(movie.title || '')}&quality=${encodeURIComponent(movie.quality || 'HD')}&type=${encodeURIComponent(movie.type || 'MOVIE')}`;
+    const url = `player.html?url=${encodeURIComponent(movie.url || '')}&title=${encodeURIComponent(movie.title || '')}&quality=${encodeURIComponent(movie.quality || 'HD')}&type=${encodeURIComponent(movie.type || 'MOVIE')}&returnUrl=${encodeURIComponent('index.html')}`;
     window.location.href = url;
 }
 

@@ -174,7 +174,8 @@ function setupDetailListeners() {
     if (playBtn) {
         playBtn.onclick = () => {
             if (currentMovie && currentMovie.url) {
-                window.location.href = `player.html?url=${encodeURIComponent(currentMovie.url)}&title=${encodeURIComponent(currentMovie.title)}&quality=${encodeURIComponent(currentMovie.quality || "HD")}`;
+                const currentFullUrl = encodeURIComponent(window.location.href);
+                window.location.href = `player.html?url=${encodeURIComponent(currentMovie.url)}&title=${encodeURIComponent(currentMovie.title)}&quality=${encodeURIComponent(currentMovie.quality || "HD")}&returnUrl=${currentFullUrl}`;
             }
         };
     }
@@ -182,7 +183,8 @@ function setupDetailListeners() {
     if (posterEl) {
         posterEl.onclick = () => {
             if (currentMovie && currentMovie.url) {
-                window.location.href = `player.html?url=${encodeURIComponent(currentMovie.url)}&title=${encodeURIComponent(currentMovie.title)}&quality=${encodeURIComponent(currentMovie.quality || "HD")}`;
+                const currentFullUrl = encodeURIComponent(window.location.href);
+                window.location.href = `player.html?url=${encodeURIComponent(currentMovie.url)}&title=${encodeURIComponent(currentMovie.title)}&quality=${encodeURIComponent(currentMovie.quality || "HD")}&returnUrl=${currentFullUrl}`;
             }
         };
     }

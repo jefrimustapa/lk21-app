@@ -57,7 +57,28 @@ function initFromUrl() {
 }
 
 function goBack() {
-    console.log("[Player] Navigating directly to home");
+    console.log("[Player] goBack requested");
+    const params = new URLSearchParams(window.location.search);
+    const returnUrl = params.get("returnUrl");
+
+    if (returnUrl) {
+        window.location.href = decodeURIComponent(returnUrl);
+        return;
+    }
+
+    if (document.referrer && (document.referrer.includes("detail.html") || document.referrer.includes("index.html"))) {
+        window.location.href = document.referrer;
+        return;
+    }
+
+    if (window.history.length > 1) {
+        window.history.back();
+        setTimeout(() => {
+            window.location.href = "index.html";
+        }, 120);
+        return;
+    }
+
     window.location.href = "index.html";
 }
 
