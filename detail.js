@@ -9,17 +9,25 @@ let currentMovie = null;
 function initDetailFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const movieUrl = params.get("url") || "";
-    const title = params.get("title") || "Movie Details";
+    const rawTitle = params.get("title") || "Movie Details";
     const poster = params.get("poster") || "";
-    const year = params.get("year") || "";
+    const rawYear = params.get("year") || "";
     const rating = params.get("rating") || "";
     const quality = params.get("quality") || "HD";
 
+    let cleanTitle = rawTitle.replace(/\s*(?:\(?\b(19\d\d|20\d\d)\b\)?)\s*$/, '').trim();
+    let extractedYear = rawYear;
+    if (!extractedYear) {
+        const yrMatch = rawTitle.match(/\b(19\d\d|20\d\d)\b/);
+        if (yrMatch) extractedYear = yrMatch[1];
+    }
+
     currentMovie = {
         url: movieUrl,
-        title: title,
+        title: cleanTitle,
+        rawTitle: rawTitle,
         poster: poster,
-        year: year,
+        year: extractedYear,
         rating: rating,
         quality: quality
     };
@@ -48,9 +56,18 @@ function renderInitialDetail(movie) {
     if (titleEl) titleEl.textContent = movie.title;
     if (posterImg && movie.poster) posterImg.src = movie.poster;
     if (banner && movie.poster) banner.style.backgroundImage = `url('${movie.poster}')`;
-    if (ratingEl && movie.rating) ratingEl.innerHTML = `<i class="fa-solid fa-star"></i> ${movie.rating}`;
-    if (qualityEl && movie.quality) qualityEl.textContent = movie.quality;
-    if (yearEl && movie.year) yearEl.textContent = movie.year;
+    if (ratingEl && movie.rating && movie.rating !== "-" && movie.rating !== "N/A") {
+        ratingEl.innerHTML = `<i class="fa-solid fa-star"></i> ${movie.rating}`;
+        ratingEl.style.display = "inline-flex";
+    }
+    if (qualityEl && movie.quality) {
+        qualityEl.textContent = movie.quality;
+        qualityEl.style.display = "inline-flex";
+    }
+    if (yearEl && movie.year) {
+        yearEl.textContent = movie.year;
+        yearEl.style.display = "inline-flex";
+    }
 }
 
 async function fetchFullMetadata(movieUrl) {
@@ -72,22 +89,51 @@ async function fetchFullMetadata(movieUrl) {
 }
 
 function populateFullMetadata(meta) {
+    if (meta.title) {
+        const cleanT = meta.title.replace(/\s*(?:\(?\b(19\d\d|20\d\d)\b\)?)\s*$/, '').trim();
+        const titleEl = document.getElementById("detailTitle");
+        if (titleEl) titleEl.textContent = cleanT;
+        document.title = `${cleanT} - LK-flix`;
+        
+        if (!currentMovie.year) {
+            const yrMatch = meta.title.match(/\b(19\d\d|20\d\d)\b/);
+            if (yrMatch) {
+                currentMovie.year = yrMatch[1];
+                const yearEl = document.getElementById("detailYear");
+                if (yearEl) {
+                    yearEl.textContent = currentMovie.year;
+                    yearEl.style.display = "inline-flex";
+                }
+            }
+        }
+    }
+
+    if (meta.rating && meta.rating !== "-" && meta.rating !== "N/A") {
+        const ratingEl = document.getElementById("detailRating");
+        if (ratingEl) {
+            ratingEl.innerHTML = `<i class="fa-solid fa-star"></i> ${meta.rating}`;
+            ratingEl.style.display = "inline-flex";
+        }
+    }
+
+    if (meta.quality) {
+        const qualityEl = document.getElementById("detailQuality");
+        if (qualityEl) {
+            qualityEl.textContent = meta.quality;
+            qualityEl.style.display = "inline-flex";
+        }
+    }
+
     if (meta.synopsis) {
         const overviewEl = document.getElementById("detailOverview");
         if (overviewEl) overviewEl.textContent = meta.synopsis;
     }
-    if (meta.director) {
-        const directorEl = document.getElementById("detailDirector");
-        if (directorEl) directorEl.textContent = meta.director;
-    }
-    if (meta.country) {
-        const countryEl = document.getElementById("detailCountry");
-        if (countryEl) countryEl.textContent = meta.country;
-    }
+
     if (meta.cast) {
         const castEl = document.getElementById("detailCast");
         if (castEl) castEl.textContent = Array.isArray(meta.cast) ? meta.cast.join(", ") : meta.cast;
     }
+
     if (meta.duration) {
         const durEl = document.getElementById("detailDuration");
         if (durEl) {
@@ -95,25 +141,43 @@ function populateFullMetadata(meta) {
             durEl.style.display = "inline-block";
         }
     }
+
     if (meta.genres) {
         const genresEl = document.getElementById("detailGenres");
         if (genresEl) {
             const genreList = Array.isArray(meta.genres) ? meta.genres : String(meta.genres).split(",");
-            genresEl.innerHTML = genreList.map(g => `<span class="detail-genre-pill">${g.trim()}</span>`).join("");
+            genresEl.innerHTML = genreList.map(g => {
+                const cleanG = g.trim();
+                return `<button class="detail-genre-pill" tabindex="0" data-genre="${cleanG}">${cleanG}</button>`;
+            }).join("");
+
+            genresEl.querySelectorAll(".detail-genre-pill").forEach(pill => {
+                pill.addEventListener("click", () => {
+                    const g = pill.getAttribute("data-genre");
+                    window.location.href = `index.html?genre=${encodeURIComponent(g)}`;
+                });
+                pill.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.keyCode === 13 || e.keyCode === 23 || e.keyCode === 66) {
+                        e.preventDefault();
+                        const g = pill.getAttribute("data-genre");
+                        window.location.href = `index.html?genre=${encodeURIComponent(g)}`;
+                    }
+                });
+            });
         }
     }
 
     if (meta.related && Array.isArray(meta.related) && meta.related.length > 0) {
         renderRelatedMovies(meta.related);
     } else {
-        // Fallback: fetch general recommendations for the section
+        // Fallback: fetch recommendations for the section
         fetchRecommendedMovies();
     }
 }
 
 async function fetchRecommendedMovies() {
     try {
-        const res = await fetch(`${API_BASE}/api/movies?page=1&limit=10`);
+        const res = await fetch(`${API_BASE}/api/movies?page=1&limit=15`);
         if (res.ok) {
             const json = await res.json();
             if (json && json.data && Array.isArray(json.data)) {
@@ -127,17 +191,40 @@ function renderRelatedMovies(movies) {
     const scrollEl = document.getElementById("detailRelatedScroll");
     if (!scrollEl) return;
 
-    scrollEl.innerHTML = movies.map(m => `
+    const currentSlug = (currentMovie.url || "").replace(/^https?:\/\/[^\/]+\//, "").replace(/\/$/, "").toLowerCase();
+    const currentTitleClean = (currentMovie.title || "").toLowerCase().replace(/\s*(?:\(?\b(19\d\d|20\d\d)\b\)?)\s*$/, '').trim();
+
+    // Filter out the main movie so suggestions are distinct
+    const filteredMovies = movies.filter(m => {
+        if (!m) return false;
+        const mSlug = (m.url || "").replace(/^https?:\/\/[^\/]+\//, "").replace(/\/$/, "").toLowerCase();
+        const mTitleClean = (m.title || "").toLowerCase().replace(/\s*(?:\(?\b(19\d\d|20\d\d)\b\)?)\s*$/, '').trim();
+        if (mSlug && currentSlug && mSlug === currentSlug) return false;
+        if (mTitleClean && currentTitleClean && mTitleClean === currentTitleClean) return false;
+        if (m.url && currentMovie.url && m.url === currentMovie.url) return false;
+        return true;
+    });
+
+    if (filteredMovies.length === 0) {
+        scrollEl.innerHTML = `<p style="color:#737373; font-size:0.9rem; padding:10px 0;">No related titles available.</p>`;
+        return;
+    }
+
+    scrollEl.innerHTML = filteredMovies.map(m => {
+        let displayTitle = m.title || "Untitled";
+        displayTitle = displayTitle.replace(/\s*(?:-|\b)\s*(\d{4})\s*$/, ' ($1)');
+        return `
         <div class="movie-card related-card" tabindex="0" data-url="${m.url}" data-title="${m.title}" data-poster="${m.poster_image || m.poster || ''}">
             <div class="poster-container">
                 <img src="${m.poster_image || m.poster || ''}" alt="${m.title}" loading="lazy">
                 <span class="badge rating-badge"><i class="fa-solid fa-star"></i> ${m.rating || '8.0'}</span>
             </div>
             <div class="movie-info">
-                <h4 class="movie-title">${m.title}</h4>
+                <h4 class="movie-title">${displayTitle}</h4>
             </div>
         </div>
-    `).join("");
+        `;
+    }).join("");
 
     scrollEl.querySelectorAll(".related-card").forEach(card => {
         card.addEventListener("click", () => {
@@ -204,6 +291,7 @@ function setupDetailListeners() {
         const playBtn = document.getElementById("detailPlayBtn");
         const backBtn = document.getElementById("closeDetailBtn");
         const posterEl = document.getElementById("detailPoster");
+        const genrePills = Array.from(document.querySelectorAll(".detail-genre-pill"));
 
         if (keyCode === 4) { // Hardware BACK button
             goBack();
@@ -226,7 +314,12 @@ function setupDetailListeners() {
         if (keyCode === 19) { // DPAD_UP
             if (active && active.classList.contains("related-card")) {
                 if (playBtn) playBtn.focus();
-            } else if (active === playBtn || active === posterEl) {
+            } else if (active === playBtn) {
+                if (genrePills.length > 0) genrePills[0].focus();
+                else if (backBtn) backBtn.focus();
+            } else if (active && active.classList.contains("detail-genre-pill")) {
+                if (backBtn) backBtn.focus();
+            } else if (active === posterEl) {
                 if (backBtn) backBtn.focus();
             } else if (backBtn) {
                 backBtn.focus();
@@ -236,6 +329,9 @@ function setupDetailListeners() {
 
         if (keyCode === 20) { // DPAD_DOWN
             if (active === backBtn) {
+                if (genrePills.length > 0) genrePills[0].focus();
+                else if (playBtn) playBtn.focus();
+            } else if (active && active.classList.contains("detail-genre-pill")) {
                 if (playBtn) playBtn.focus();
             } else if (active === playBtn || active === posterEl) {
                 const firstRelated = document.querySelector(".related-card");
@@ -248,7 +344,14 @@ function setupDetailListeners() {
         }
 
         if (keyCode === 21) { // DPAD_LEFT
-            if (active && active.classList.contains("related-card")) {
+            if (active && active.classList.contains("detail-genre-pill")) {
+                const prevPill = active.previousElementSibling;
+                if (prevPill && prevPill.classList.contains("detail-genre-pill")) {
+                    prevPill.focus();
+                } else if (posterEl) {
+                    posterEl.focus();
+                }
+            } else if (active && active.classList.contains("related-card")) {
                 const prev = active.previousElementSibling;
                 if (prev && prev.classList.contains("related-card")) {
                     prev.focus();
@@ -261,7 +364,14 @@ function setupDetailListeners() {
         }
 
         if (keyCode === 22) { // DPAD_RIGHT
-            if (active && active.classList.contains("related-card")) {
+            if (active && active.classList.contains("detail-genre-pill")) {
+                const nextPill = active.nextElementSibling;
+                if (nextPill && nextPill.classList.contains("detail-genre-pill")) {
+                    nextPill.focus();
+                } else if (playBtn) {
+                    playBtn.focus();
+                }
+            } else if (active && active.classList.contains("related-card")) {
                 const next = active.nextElementSibling;
                 if (next && next.classList.contains("related-card")) {
                     next.focus();
