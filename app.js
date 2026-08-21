@@ -448,25 +448,37 @@ function showPlayerIframeControls(persistent = false) {
 
 let seekHudTimer = null;
 
-function showSeekHud(seconds) {
+function showSeekHud(seconds, targetPos) {
     const hud = document.getElementById("playerSeekHud");
     const icon = document.getElementById("seekHudIcon");
     const text = document.getElementById("seekHudText");
     if (!hud || !icon || !text) return;
 
+    const absSec = Math.abs(seconds);
+    let stepStr = "";
+    if (absSec >= 60) {
+        const m = Math.floor(absSec / 60);
+        const s = absSec % 60;
+        stepStr = s > 0 ? `${m}m ${s}s` : `${m}m`;
+    } else {
+        stepStr = `${absSec}s`;
+    }
+
+    const posToDisplay = targetPos !== undefined ? targetPos : currentStreamPosition;
+
     if (seconds > 0) {
         icon.className = "fa-solid fa-forward";
-        text.textContent = `+${seconds}s`;
+        text.textContent = `+${stepStr} (${formatPlayerTime(posToDisplay)})`;
     } else {
         icon.className = "fa-solid fa-backward";
-        text.textContent = `${seconds}s`;
+        text.textContent = `-${stepStr} (${formatPlayerTime(posToDisplay)})`;
     }
 
     hud.classList.remove("hidden");
     if (seekHudTimer) clearTimeout(seekHudTimer);
     seekHudTimer = setTimeout(() => {
         hud.classList.add("hidden");
-    }, 1200);
+    }, 1400);
 }
 
 let tvControllerTimer = null;
@@ -696,38 +708,67 @@ function showSeekHudText(text, iconClass) {
     }, 1200);
 }
 
-function seekPlayerStream(seconds) {
-    showSeekHud(seconds);
-    const nativeVideo = document.getElementById("nativeVideoPlayer");
-    if (nativeVideo && !nativeVideo.classList.contains("hidden")) {
-        const newTime = Math.max(0, Math.min(nativeVideo.currentTime + seconds, (nativeVideo.duration || 999999)));
-        nativeVideo.currentTime = newTime;
-        updateCustomPlayerTime(nativeVideo.currentTime, nativeVideo.duration || 0);
-        showTvPlayerController(!isStreamPlaying);
-        return;
-    }
+let lastSeekTimestamp = 0;
+let seekAccMultiplier = 1;
+let seekAccTimer = null;
 
-    currentStreamPosition = Math.max(0, Math.min(currentStreamPosition + seconds, (currentStreamDuration || 999999)));
+function seekPlayerToPosition(targetSeconds) {
+    if (currentStreamDuration > 0) {
+        targetSeconds = Math.max(0, Math.min(targetSeconds, currentStreamDuration));
+    } else {
+        targetSeconds = Math.max(0, targetSeconds);
+    }
+    currentStreamPosition = targetSeconds;
     updateCustomPlayerTime(currentStreamPosition, currentStreamDuration);
     showTvPlayerController(!isStreamPlaying);
+
+    const nativeVideo = document.getElementById("nativeVideoPlayer");
+    if (nativeVideo && !nativeVideo.classList.contains("hidden")) {
+        nativeVideo.currentTime = targetSeconds;
+        return;
+    }
 
     const iframe = document.getElementById("videoIframe");
     if (!iframe || !iframe.contentWindow) return;
 
     try {
         iframe.contentWindow.postMessage(JSON.stringify({
-            event: "command",
-            func: seconds > 0 ? "fastForward" : "rewind",
-            args: [Math.abs(seconds)]
+            type: "seekTo",
+            position: targetSeconds
         }), "*");
-
         iframe.contentWindow.postMessage({
-            type: "seek",
-            offset: seconds
+            type: "seekTo",
+            position: targetSeconds
         }, "*");
     } catch (e) {
-        console.warn("Player seek postMessage dispatch error:", e);
+        console.warn("seekTo dispatch error:", e);
     }
+}
+
+function seekPlayerStream(seconds) {
+    const targetPos = Math.max(0, Math.min(currentStreamPosition + seconds, (currentStreamDuration || 999999)));
+    showSeekHud(seconds, targetPos);
+    seekPlayerToPosition(targetPos);
+}
+
+function adaptiveSeek(direction) {
+    const now = Date.now();
+    if (now - lastSeekTimestamp < 450) {
+        seekAccMultiplier = Math.min(seekAccMultiplier * 1.6, 20);
+    } else {
+        seekAccMultiplier = 1;
+    }
+    lastSeekTimestamp = now;
+
+    clearTimeout(seekAccTimer);
+    seekAccTimer = setTimeout(() => {
+        seekAccMultiplier = 1;
+    }, 700);
+
+    const baseStep = Math.max(30, Math.round((currentStreamDuration || 3600) * 0.01));
+    const stepSeconds = Math.round(baseStep * seekAccMultiplier) * direction;
+
+    seekPlayerStream(stepSeconds);
 }
 
 let activeServerList = [];
@@ -1072,11 +1113,11 @@ window.handleNativeDpad = function(nativeKeyCode) {
 
         if (isStreamPlaying) {
             // === WHEN PLAYING ===
-            // D-Pad UP, DOWN, LEFT, RIGHT do NOT show the navbar/header
-            if (nativeKeyCode === 21) { // DPAD_LEFT (Rewind 10s)
-                seekPlayerStream(-10);
-            } else if (nativeKeyCode === 22) { // DPAD_RIGHT (Fast Forward 10s)
-                seekPlayerStream(10);
+            // D-Pad Left/Right scrubs with acceleration; OK toggles pause
+            if (nativeKeyCode === 21) { // DPAD_LEFT (Rewind)
+                adaptiveSeek(-1);
+            } else if (nativeKeyCode === 22) { // DPAD_RIGHT (Fast Forward)
+                adaptiveSeek(1);
             } else if (nativeKeyCode === 23 || nativeKeyCode === 66 || nativeKeyCode === 85 || nativeKeyCode === 126 || nativeKeyCode === 127) {
                 // OK / Enter -> initiates pause
                 togglePlayerPlayback();
@@ -1094,13 +1135,10 @@ window.handleNativeDpad = function(nativeKeyCode) {
                     closeBtn.focus();
                 }
             } else if (nativeKeyCode === 20) { // DPAD_DOWN = 20
-                // Move focus DOWN to Media Controller Bar
+                // Move focus DOWN to Timeline Scrubber Bar
                 const scrubEl = document.getElementById("tvScrubContainer");
-                const playBtn = document.getElementById("tvPlayPauseBtn");
                 if (scrubEl && scrubEl.offsetParent !== null) {
                     scrubEl.focus();
-                } else if (playBtn && playBtn.offsetParent !== null) {
-                    playBtn.focus();
                 } else {
                     if (activeEl) activeEl.blur();
                     window.focus();
@@ -1110,14 +1148,14 @@ window.handleNativeDpad = function(nativeKeyCode) {
                     const closeBtn = document.getElementById("closePlayerBtn");
                     if (closeBtn) closeBtn.focus();
                 } else {
-                    seekPlayerStream(-10);
+                    adaptiveSeek(-1);
                 }
             } else if (nativeKeyCode === 22) { // DPAD_RIGHT = 22
                 if (isHeaderBtnFocused) {
                     const switchBtn = document.getElementById("switchServerBtn");
                     if (switchBtn && switchBtn.style.display !== "none") switchBtn.focus();
                 } else {
-                    seekPlayerStream(10);
+                    adaptiveSeek(1);
                 }
             } else if (nativeKeyCode === 23 || nativeKeyCode === 66 || nativeKeyCode === 85 || nativeKeyCode === 126 || nativeKeyCode === 127) {
                 // OK / Enter
@@ -1125,12 +1163,8 @@ window.handleNativeDpad = function(nativeKeyCode) {
                     if (activeEl && typeof activeEl.click === "function") {
                         activeEl.click();
                     }
-                } else if (isCtrlBtnFocused) {
-                    if (activeEl && typeof activeEl.click === "function") {
-                        activeEl.click();
-                    }
                 } else {
-                    togglePlayerPlayback(); // Resumes playback!
+                    togglePlayerPlayback(); // Resumes playback at the current scrubbed timestamp!
                 }
             }
         }
