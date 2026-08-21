@@ -1285,110 +1285,17 @@ function closePlayerModal(fromHistory = false) {
     }
 }
 
-let lastFocusedElement = null;
-
 function openDetailModal(movie) {
-    // Remember which movie card had focus before opening modal
-    if (document.activeElement && (document.activeElement.classList.contains('movie-card') || document.activeElement.id === 'heroInfoBtn' || document.activeElement.id === 'heroPlayBtn')) {
-        lastFocusedElement = document.activeElement;
-    }
+    if (!movie) return;
+    const poster = movie.poster_image || movie.poster || "";
+    const url = `detail.html?url=${encodeURIComponent(movie.url || '')}&title=${encodeURIComponent(movie.title || '')}&poster=${encodeURIComponent(poster)}&year=${encodeURIComponent(movie.year || '')}&rating=${encodeURIComponent(movie.rating || '')}&quality=${encodeURIComponent(movie.quality || 'HD')}`;
+    window.location.href = url;
+}
 
-    const modal = document.getElementById("detailModal");
-
-    // Backdrop (blurred bg)
-    document.getElementById("detailBanner").style.backgroundImage = `url('${movie.poster_image || ''}')`;
-
-    // Poster image
-    const posterImg = document.getElementById("detailPosterImg");
-    if (posterImg) {
-        posterImg.src = movie.poster_image || '';
-        posterImg.alt = movie.title || 'Movie Poster';
-    }
-
-    const titleEl = document.getElementById("detailTitle");
-    if (titleEl) titleEl.textContent = movie.title || "Untitled";
-
-    const ratingEl = document.getElementById("detailRating");
-    if (ratingEl) ratingEl.innerHTML = `<i class="fa-solid fa-star"></i> ${movie.rating || 'N/A'}`;
-
-    const qualityEl = document.getElementById("detailQuality");
-    if (qualityEl) qualityEl.textContent = movie.quality || 'HD';
-
-    const typeEl = document.getElementById("detailType");
-    if (typeEl) typeEl.textContent = (movie.type || 'MOVIE').toUpperCase();
-
-    const synEl = document.getElementById("detailSynopsis");
-    if (synEl) synEl.textContent = movie.synopsis || "No synopsis available.";
-
-    const genresEl = document.getElementById("detailGenres");
-    if (genresEl) genresEl.textContent = movie.genres || "-";
-
-    const castEl = document.getElementById("detailCast");
-    if (castEl) castEl.textContent = movie.cast || "-";
-
-    const playBtn = document.getElementById("detailPlayBtn");
-    playBtn.onclick = () => {
-        // Do NOT close detail modal so it remains directly underneath the player view
-        openPlayerModal(movie);
-    };
-    playBtn.onfocus = () => {
-        const isTv = document.documentElement.classList.contains("tv-mode") || document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
-        if (isTv && modal) {
-            modal.scrollTop = 0;
-            if (typeof modal.scrollTo === "function") {
-                modal.scrollTo({ top: 0, behavior: "smooth" });
-            }
-        }
-    };
-
-    const posterCard = document.getElementById("detailPoster");
-    if (posterCard) {
-        posterCard.onclick = () => {
-            openPlayerModal(movie);
-        };
-        posterCard.onkeydown = (e) => {
-            if (e.key === "Enter" || e.keyCode === 13 || e.keyCode === 23 || e.keyCode === 66) {
-                e.preventDefault();
-                openPlayerModal(movie);
-            }
-        };
-    }
-
-    // Render "You May Also Like" recommendation carousel
-    renderRelatedMovies(movie);
-
-    // Make visible, slide in, and ensure it scrolls directly to the top
-    modal.scrollTop = 0;
-    if (typeof modal.scrollTo === "function") modal.scrollTo(0, 0);
-    modal.classList.remove("hidden");
-    modal.style.display = "block";
-
-    const backBtn = document.getElementById("closeDetailBtn");
-
-    requestAnimationFrame(() => {
-        modal.classList.add("detail-open");
-        modal.scrollTop = 0;
-        if (typeof modal.scrollTo === "function") modal.scrollTo(0, 0);
-        refreshFocusableElements();
-        if (backBtn) {
-            backBtn.focus({ preventScroll: true });
-        }
-    });
-
-    // Ensure scrollTop is 0 after CSS transition starts
-    setTimeout(() => {
-        modal.scrollTop = 0;
-        if (typeof modal.scrollTo === "function") modal.scrollTo(0, 0);
-        refreshFocusableElements();
-        if (backBtn) {
-            backBtn.focus({ preventScroll: true });
-        }
-    }, 50);
-
-    const searchInput = document.getElementById("searchInput");
-    if (searchInput) searchInput.blur();
-
-    history.pushState({ modalOpen: "detail" }, "");
+function openPlayerModal(movie) {
+    if (!movie) return;
+    const url = `player.html?url=${encodeURIComponent(movie.url || '')}&title=${encodeURIComponent(movie.title || '')}&quality=${encodeURIComponent(movie.quality || 'HD')}&type=${encodeURIComponent(movie.type || 'MOVIE')}`;
+    window.location.href = url;
 }
 
 /* ==========================================================================

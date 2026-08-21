@@ -139,98 +139,10 @@
         </section>
     </main>
 
-    <!-- Movie Video Player Full Page View -->
-    <div class="player-modal hidden" id="playerModal">
-        <!-- Top Cinematic Overlay Header -->
-        <div class="player-header">
-            <button class="btn-back-player" id="closePlayerBtn" tabindex="0">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </button>
-            <div class="player-meta-title">
-                <div class="player-title-box">
-                    <span class="player-title" id="playerTitle">Now Playing</span>
-                </div>
-                <div class="player-badges">
-                    <span class="badge quality-badge" id="playerQuality">HD</span>
-                    <span class="badge type-badge" id="playerType">MOVIE</span>
-                </div>
-            </div>
-            <button class="btn-switch-server" id="switchServerBtn" title="Switch Stream Server" tabindex="0">
-                <i class="fa-solid fa-arrows-rotate"></i> <span>Server</span>
-            </button>
-        </div>
-
-        <!-- Center Screen Seek Toast / HUD Indicator -->
-        <div class="player-seek-hud hidden" id="playerSeekHud">
-            <i class="fa-solid fa-forward" id="seekHudIcon"></i>
-            <span id="seekHudText">+10s</span>
-        </div>
-
-        <!-- Full Viewport Embedded Cinema Stream -->
-        <div class="player-container">
-            <video id="nativeVideoPlayer" class="hidden" controls autoplay playsinline style="width: 100%; height: 100%; object-fit: contain; background: #000;"></video>
-            <iframe id="videoIframe" tabindex="-1" src="" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"></iframe>
-        </div>
-
-        <!-- TV Remote Virtual Pointer Cursor (Active only on TV inside player modal) -->
-        <div id="tvVirtualCursor" class="tv-virtual-cursor hidden">
-            <div class="tv-cursor-pointer"></div>
-            <div class="tv-cursor-ring"></div>
-        </div>
-    </div>
-
-    <!-- Movie Detail Full Page -->
-    <div class="detail-modal hidden" id="detailModal">
-        <!-- Back button (Always on top and clearly visible in top-left) -->
-        <button class="btn-back-detail" id="closeDetailBtn" tabindex="0">
-            <i class="fa-solid fa-arrow-left"></i> Back
-        </button>
-
-        <!-- Cinematic backdrop -->
-        <div class="detail-backdrop" id="detailBanner">
-            <div class="detail-backdrop-overlay"></div>
-        </div>
-        <!-- Poster + Info -->
-        <div class="detail-page-content">
-            <div class="detail-poster" id="detailPoster" tabindex="0">
-                <img id="detailPosterImg" src="" alt="Movie Poster" loading="lazy">
-            </div>
-            <div class="detail-info">
-                <h2 class="detail-title" id="detailTitle">Movie Title</h2>
-                <div class="detail-tags">
-                    <span class="badge rating-badge" id="detailRating"><i class="fa-solid fa-star"></i> 8.0</span>
-                    <span class="badge quality-badge" id="detailQuality">HD</span>
-                    <span class="badge type-badge" id="detailType">MOVIE</span>
-                </div>
-                <p class="detail-synopsis" id="detailSynopsis">Synopsis loading...</p>
-                <div class="detail-meta-grid">
-                    <div class="detail-info-group">
-                        <span class="info-label">Genres:</span>
-                        <span class="info-val" id="detailGenres">-</span>
-                    </div>
-                    <div class="detail-info-group">
-                        <span class="info-label">Cast:</span>
-                        <span class="info-val" id="detailCast">-</span>
-                    </div>
-                </div>
-                <div class="detail-actions">
-                    <button class="btn btn-play" id="detailPlayBtn" tabindex="0"><i class="fa-solid fa-play"></i> Watch Now</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- You May Also Like Related Movies Section -->
-        <div class="detail-related-section" id="detailRelatedSection">
-            <h3 class="related-section-title"><i class="fa-solid fa-layer-group"></i> You May Also Like</h3>
-            <div class="related-movies-scroll" id="detailRelatedScroll">
-                <!-- Related movie cards injected dynamically -->
-            </div>
-        </div>
-    </div>
-
-
+    <!-- Toast Notifications -->
+    <div class="stream-toast hidden" id="streamToast"></div>
 
     <script src="hls.min.js?v=20260819_2"></script>
-    <script src="app.js?v=20260820_4"></script>
+    <script src="app.js?v=20260821_1"></script>
 </body>
 </html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LK-flix - Movie Details</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="theme-color" content="#141414">
+    <link rel="stylesheet" href="style.css?v=20260821_1">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: #141414;
+            color: #FFF;
+        }
+        .detail-page {
+            position: relative;
+            width: 100vw;
+            min-height: 100vh;
+            background: #141414;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+    </style>
+    <script>
+        (function() {
+            var isNativeTV = (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
+            var isTVUA = /googletv|android tv|smart-tv|firetv|aftb|aftt/i.test(navigator.userAgent);
+            var hasNoTouch = navigator.maxTouchPoints === 0;
+            var isWide = window.innerWidth >= 900 || screen.width >= 900;
+            var forceTv = new URLSearchParams(window.location.search).get("tv") === "1";
+            
+            if (forceTv || isNativeTV || isTVUA || isWide || hasNoTouch) {
+                document.documentElement.classList.add("tv-mode");
+                window._INITIAL_TV_MODE = true;
+            }
+
+            window.open = function() { return null; };
+        })();
+    </script>
+</head>
+<body class="theme-dark">
+    <div class="detail-page" id="detailModal">
+        <!-- Back button -->
+        <button class="btn-back-detail" id="closeDetailBtn" tabindex="0">
+            <i class="fa-solid fa-arrow-left"></i> Back
+        </button>
+
+        <!-- Cinematic backdrop -->
+        <div class="detail-backdrop" id="detailBanner">
+            <div class="detail-backdrop-overlay"></div>
+        </div>
+
+        <!-- Poster + Info -->
+        <div class="detail-page-content">
+            <div class="detail-poster" id="detailPoster" tabindex="0">
+                <img id="detailPosterImg" src="" alt="Movie Poster" loading="lazy">
+            </div>
+            <div class="detail-info">
+                <h2 class="detail-title" id="detailTitle">Loading Title...</h2>
+                <div class="detail-tags">
+                    <span class="badge rating-badge" id="detailRating"><i class="fa-solid fa-star"></i> -</span>
+                    <span class="badge quality-badge" id="detailQuality">HD</span>
+                    <span class="badge year-badge" id="detailYear">-</span>
+                    <span class="badge duration-badge" id="detailDuration">-</span>
+                </div>
+                <div class="detail-genres" id="detailGenres"></div>
+                <p class="detail-overview" id="detailOverview">Loading synopsis...</p>
+                <div class="detail-meta-grid">
+                    <div class="detail-info-group">
+                        <span class="info-label">Director:</span>
+                        <span class="info-val" id="detailDirector">-</span>
+                    </div>
+                    <div class="detail-info-group">
+                        <span class="info-label">Country:</span>
+                        <span class="info-val" id="detailCountry">-</span>
+                    </div>
+                    <div class="detail-info-group">
+                        <span class="info-label">Cast:</span>
+                        <span class="info-val" id="detailCast">-</span>
+                    </div>
+                </div>
+                <div class="detail-actions">
+                    <button class="btn btn-play" id="detailPlayBtn" tabindex="0"><i class="fa-solid fa-play"></i> Watch Now</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- You May Also Like Related Movies Section -->
+        <div class="detail-related-section" id="detailRelatedSection">
+            <h3 class="related-section-title"><i class="fa-solid fa-layer-group"></i> You May Also Like</h3>
+            <div class="related-movies-scroll" id="detailRelatedScroll"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="stream-toast hidden" id="streamToast"></div>
+
+    <script src="detail.js?v=20260821_1"></script>
+</body>
+</html>
