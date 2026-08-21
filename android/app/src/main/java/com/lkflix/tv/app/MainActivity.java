@@ -280,6 +280,13 @@ public class MainActivity extends BridgeActivity {
                                  + "    triggerToggle();\n"
                                  + "  }\n"
                                  + "});\n"
+                                 + "window.addEventListener('keydown', function(e) {\n"
+                                 + "  if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.keyCode === 38 || e.keyCode === 40 || e.keyCode === 19 || e.keyCode === 20) {\n"
+                                 + "    e.preventDefault();\n"
+                                 + "    e.stopPropagation();\n"
+                                 + "    e.stopImmediatePropagation();\n"
+                                 + "  }\n"
+                                 + "}, true);\n"
                                  + "</script>\n";
 
                             if (fullHtml.contains("</body>")) {
@@ -330,6 +337,11 @@ public class MainActivity extends BridgeActivity {
                             webView.evaluateJavascript("if (typeof window.handleNativeDpad === 'function') { window.handleNativeDpad(" + keyCode + "); }", null);
                         }
                     });
+                }
+                
+                // When in TV mode, consume D-pad events so they never propagate into embedded iframes
+                if (nativeIsTv) {
+                    return true;
                 }
             }
         }

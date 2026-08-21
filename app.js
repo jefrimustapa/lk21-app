@@ -832,11 +832,23 @@ function showPlayerControls(persistent = false) {
 
 // Bridge hook called directly by Android native dispatchKeyEvent for all D-Pad remote events
 window.handleNativeDpad = function(nativeKeyCode) {
-    const playerModal = document.getElementById("playerModal");
-    if (!playerModal || playerModal.classList.contains("hidden")) return;
-
     const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
     if (!isTv) return;
+
+    const playerModal = document.getElementById("playerModal");
+    const isPlayerOpen = playerModal && !playerModal.classList.contains("hidden");
+
+    if (!isPlayerOpen) {
+        if (nativeKeyCode === 19) navigateDpad("UP");
+        else if (nativeKeyCode === 20) navigateDpad("DOWN");
+        else if (nativeKeyCode === 21) navigateDpad("LEFT");
+        else if (nativeKeyCode === 22) navigateDpad("RIGHT");
+        else if (nativeKeyCode === 23 || nativeKeyCode === 66) {
+            const activeEl = document.activeElement;
+            if (activeEl && typeof activeEl.click === "function") activeEl.click();
+        }
+        return;
+    }
 
     const activeEl = document.activeElement;
     const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
