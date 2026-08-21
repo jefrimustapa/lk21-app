@@ -469,18 +469,165 @@ function showSeekHud(seconds) {
     }, 1200);
 }
 
+let tvControllerTimer = null;
+
+function formatPlayerTime(seconds) {
+    if (isNaN(seconds) || seconds < 0) return "00:00";
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (h > 0) {
+        return `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+function updateCustomPlayerTime(currentTime, duration) {
+    const curTimeEl = document.getElementById("tvCurrentTime");
+    const durTimeEl = document.getElementById("tvDuration");
+    const progEl = document.getElementById("tvScrubProgress");
+    const thumbEl = document.getElementById("tvScrubThumb");
+    
+    if (curTimeEl) curTimeEl.textContent = formatPlayerTime(currentTime);
+    if (durTimeEl && duration > 0) durTimeEl.textContent = formatPlayerTime(duration);
+    
+    if (duration > 0 && progEl && thumbEl) {
+        const pct = Math.max(0, Math.min(100, (currentTime / duration) * 100));
+        progEl.style.width = `${pct}%`;
+        thumbEl.style.left = `${pct}%`;
+    }
+}
+
+function updateCustomPlayerBuffer(bufferPercent) {
+    const bufEl = document.getElementById("tvScrubBuffer");
+    if (bufEl) bufEl.style.width = `${Math.max(0, Math.min(100, bufferPercent))}%`;
+}
+
+function updateCustomPlayerPlayPauseIcon(isPlaying) {
+    const icon = document.getElementById("tvPlayPauseIcon");
+    if (icon) {
+        icon.className = isPlaying ? "fa-solid fa-pause" : "fa-solid fa-play";
+    }
+}
+
+function showTvPlayerController(persistent = false) {
+    const ctrl = document.getElementById("tvPlayerController");
+    if (!ctrl) return;
+    ctrl.classList.remove("hidden");
+    if (tvControllerTimer) {
+        clearTimeout(tvControllerTimer);
+        tvControllerTimer = null;
+    }
+    if (!persistent && isStreamPlaying) {
+        tvControllerTimer = setTimeout(() => {
+            if (isStreamPlaying) {
+                ctrl.classList.add("hidden");
+            }
+        }, 4000);
+    }
+}
+
+function hideTvPlayerController() {
+    const ctrl = document.getElementById("tvPlayerController");
+    if (ctrl) ctrl.classList.add("hidden");
+    if (tvControllerTimer) clearTimeout(tvControllerTimer);
+}
+
+function attachStreamToCustomPlayer(streamUrl, referer) {
+    if (!streamUrl) return;
+    console.log("[LKFlix] Stream detected! Detaching to native custom player:", streamUrl);
+    
+    const nativeVideo = document.getElementById("nativeVideoPlayer");
+    const iframe = document.getElementById("videoIframe");
+    if (!nativeVideo) return;
+
+    // 1. Mute/pause the iframe to stop duplicate audio
+    if (iframe && iframe.contentWindow) {
+        try {
+            iframe.contentWindow.postMessage(JSON.stringify({ type: "pause" }), "*");
+        } catch(e){}
+    }
+
+    // 2. Hide iframe and reveal native custom video player
+    if (iframe) iframe.classList.add("hidden");
+    nativeVideo.classList.remove("hidden");
+    hideTvCursor();
+
+    // 3. Load stream via Hls.js or native HTML5 <video>
+    if (window.Hls && Hls.isSupported() && (streamUrl.includes(".m3u8") || streamUrl.includes("blob:"))) {
+        if (window.currentHlsInstance) {
+            window.currentHlsInstance.destroy();
+            window.currentHlsInstance = null;
+        }
+        const hls = new Hls({
+            enableWorker: true,
+            lowLatencyMode: false
+        });
+        window.currentHlsInstance = hls;
+        hls.loadSource(streamUrl);
+        hls.attachMedia(nativeVideo);
+        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            nativeVideo.play().catch(e => console.log("Hls play error:", e));
+            isStreamLoaded = true;
+            isStreamPlaying = true;
+            showTvPlayerController(false);
+            startPlayerHeaderHideCountdown();
+        });
+        hls.on(Hls.Events.ERROR, function(event, data) {
+            if (data.fatal) {
+                console.warn("[Hls] Fatal error, falling back to iframe:", data);
+                nativeVideo.classList.add("hidden");
+                if (iframe) iframe.classList.remove("hidden");
+            }
+        });
+    } else {
+        nativeVideo.src = streamUrl;
+        nativeVideo.play().catch(e => console.log("Native video play error:", e));
+        isStreamLoaded = true;
+        isStreamPlaying = true;
+        showTvPlayerController(false);
+        startPlayerHeaderHideCountdown();
+    }
+
+    // 4. Hook native video events
+    nativeVideo.ontimeupdate = () => {
+        updateCustomPlayerTime(nativeVideo.currentTime, nativeVideo.duration);
+    };
+    nativeVideo.onplay = () => {
+        handlePlayerPlayState();
+        updateCustomPlayerPlayPauseIcon(true);
+    };
+    nativeVideo.onpause = () => {
+        handlePlayerPauseState();
+        updateCustomPlayerPlayPauseIcon(false);
+    };
+    nativeVideo.onprogress = () => {
+        if (nativeVideo.buffered.length > 0 && nativeVideo.duration > 0) {
+            const bufEnd = nativeVideo.buffered.end(nativeVideo.buffered.length - 1);
+            updateCustomPlayerBuffer((bufEnd / nativeVideo.duration) * 100);
+        }
+    };
+}
+
 let lastTogglePlaybackTime = 0;
 
 function handlePlayerPauseState() {
     isStreamPlaying = false;
     showPlayerHeaderPersistent();
+    showTvPlayerController(true);
     showPlayerIframeControls(true);
+    updateCustomPlayerPlayPauseIcon(false);
 
     const activeEl = document.activeElement;
     if (activeEl && (activeEl.id === "closePlayerBtn" || activeEl.id === "switchServerBtn")) {
         activeEl.blur();
     }
-    window.focus();
+    const scrubEl = document.getElementById("tvScrubContainer");
+    if (scrubEl && scrubEl.offsetParent !== null) {
+        scrubEl.focus();
+    } else {
+        window.focus();
+    }
 }
 
 function handlePlayerPlayState() {
@@ -488,10 +635,12 @@ function handlePlayerPlayState() {
     isStreamPlaying = true;
     hideTvCursor();
     startPlayerHeaderHideCountdown();
+    showTvPlayerController(false);
     showPlayerIframeControls(false);
+    updateCustomPlayerPlayPauseIcon(true);
 
     const activeEl = document.activeElement;
-    if (activeEl && (activeEl.id === "closePlayerBtn" || activeEl.id === "switchServerBtn")) {
+    if (activeEl && (activeEl.id === "closePlayerBtn" || activeEl.id === "switchServerBtn" || activeEl.id === "tvScrubContainer" || activeEl.id === "tvPlayPauseBtn")) {
         activeEl.blur();
     }
     window.focus();
@@ -547,6 +696,7 @@ function seekPlayerStream(seconds) {
     if (nativeVideo && !nativeVideo.classList.contains("hidden")) {
         const newTime = Math.max(0, Math.min(nativeVideo.currentTime + seconds, (nativeVideo.duration || 999999)));
         nativeVideo.currentTime = newTime;
+        updateCustomPlayerTime(nativeVideo.currentTime, nativeVideo.duration || 0);
         return;
     }
 
@@ -802,11 +952,18 @@ window.addEventListener("message", (event) => {
         if (data.event === "error" || data.status === "error" || data.type === "error" || data.error) {
             console.warn("[StreamEngine] Received error message from embedded player:", data);
             tryNextServerFallback();
+        } else if (data.type === "streamDetected" && data.streamUrl) {
+            attachStreamToCustomPlayer(data.streamUrl, data.referer);
+        } else if (data.type === "timeUpdate") {
+            if (data.currentTime !== undefined) {
+                updateCustomPlayerTime(data.currentTime, data.duration || 0);
+            }
         } else if (data.type === "userActivity" || data.event === "click" || data.type === "tap") {
             if (isStreamPlaying) {
                 // When playing, user activity does not reveal navbar
             } else {
                 showPlayerHeaderPersistent();
+                showTvPlayerController(true);
             }
         } else if (data.type === "pause" || data.event === "pause" || data.state === "paused") {
             handlePlayerPauseState();
@@ -819,8 +976,10 @@ window.addEventListener("message", (event) => {
 function showPlayerControls(persistent = false) {
     if (persistent || (!isStreamPlaying && isStreamLoaded)) {
         showPlayerHeaderPersistent();
+        showTvPlayerController(true);
     } else {
         startPlayerHeaderHideCountdown();
+        showTvPlayerController(false);
     }
 
     showPlayerIframeControls(persistent);
@@ -837,6 +996,8 @@ window.handleNativeDpad = function(nativeKeyCode) {
         const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
         const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
         const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
+        const isScrubFocused = activeEl && activeEl.id === "tvScrubContainer";
+        const isCtrlBtnFocused = activeEl && activeEl.classList.contains("tv-ctrl-btn");
 
         if (isStreamPlaying) {
             // === WHEN PLAYING ===
@@ -851,19 +1012,25 @@ window.handleNativeDpad = function(nativeKeyCode) {
             }
         } else {
             // === WHEN PAUSED ===
-            // Header is persistent; D-Pad UP/DOWN moves focus between header and media controller
+            // Header and Media Controller are persistent; D-Pad UP/DOWN moves focus between header and media controller
             if (nativeKeyCode === 19) { // DPAD_UP = 19
-                if (!isHeaderBtnFocused) {
-                    const switchBtn = document.getElementById("switchServerBtn");
-                    const closeBtn = document.getElementById("closePlayerBtn");
-                    if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
-                        switchBtn.focus();
-                    } else if (closeBtn) {
-                        closeBtn.focus();
-                    }
+                // Move focus UP to Header buttons
+                const switchBtn = document.getElementById("switchServerBtn");
+                const closeBtn = document.getElementById("closePlayerBtn");
+                if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                    switchBtn.focus();
+                } else if (closeBtn) {
+                    closeBtn.focus();
                 }
             } else if (nativeKeyCode === 20) { // DPAD_DOWN = 20
-                if (isHeaderBtnFocused) {
+                // Move focus DOWN to Media Controller Bar
+                const scrubEl = document.getElementById("tvScrubContainer");
+                const playBtn = document.getElementById("tvPlayPauseBtn");
+                if (scrubEl && scrubEl.offsetParent !== null) {
+                    scrubEl.focus();
+                } else if (playBtn && playBtn.offsetParent !== null) {
+                    playBtn.focus();
+                } else {
                     if (activeEl) activeEl.blur();
                     window.focus();
                 }
@@ -884,6 +1051,10 @@ window.handleNativeDpad = function(nativeKeyCode) {
             } else if (nativeKeyCode === 23 || nativeKeyCode === 66 || nativeKeyCode === 85 || nativeKeyCode === 126 || nativeKeyCode === 127) {
                 // OK / Enter
                 if (isHeaderBtnFocused) {
+                    if (activeEl && typeof activeEl.click === "function") {
+                        activeEl.click();
+                    }
+                } else if (isCtrlBtnFocused) {
                     if (activeEl && typeof activeEl.click === "function") {
                         activeEl.click();
                     }
@@ -1120,6 +1291,7 @@ function closePlayerModal(fromHistory = false) {
     if (modal.classList.contains("hidden")) return;
     
     hideTvCursor();
+    hideTvPlayerController();
     
     if (currentDynamicStreamAbortCtrl) {
         currentDynamicStreamAbortCtrl.abort();
@@ -1714,6 +1886,45 @@ function setupEventListeners() {
         }, 400);
     });
 
+    // TV Media Controller Listeners
+    const tvPlayPauseBtn = document.getElementById("tvPlayPauseBtn");
+    if (tvPlayPauseBtn) {
+        tvPlayPauseBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            togglePlayerPlayback();
+        };
+    }
+    const tvRewindBtn = document.getElementById("tvRewindBtn");
+    if (tvRewindBtn) {
+        tvRewindBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            seekPlayerStream(-10);
+        };
+    }
+    const tvForwardBtn = document.getElementById("tvForwardBtn");
+    if (tvForwardBtn) {
+        tvForwardBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            seekPlayerStream(10);
+        };
+    }
+    const tvScrubContainer = document.getElementById("tvScrubContainer");
+    if (tvScrubContainer) {
+        tvScrubContainer.onclick = (e) => {
+            const rect = tvScrubContainer.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const pct = Math.max(0, Math.min(1, clickX / rect.width));
+            const nativeVideo = document.getElementById("nativeVideoPlayer");
+            if (nativeVideo && nativeVideo.duration) {
+                nativeVideo.currentTime = pct * nativeVideo.duration;
+                updateCustomPlayerTime(nativeVideo.currentTime, nativeVideo.duration);
+            }
+        };
+    }
+
     // Keyboard Event Listener for Android TV Remote Keys & Player Controls
     document.addEventListener("keydown", (e) => {
         const playerModal = document.getElementById("playerModal");
@@ -1729,6 +1940,8 @@ function setupEventListeners() {
             const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
             const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
             const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
+            const isScrubFocused = activeEl && activeEl.id === "tvScrubContainer";
+            const isCtrlBtnFocused = activeEl && activeEl.classList.contains("tv-ctrl-btn");
 
             // Only show temporary header when NOT actively playing
             if (!isStreamLoaded) {
@@ -1772,7 +1985,10 @@ function setupEventListeners() {
                 if (key === "ArrowDown" || keyCode === 40) {
                     e.preventDefault();
                     if (activeEl) activeEl.blur();
-                    if (isTv) {
+                    const scrubEl = document.getElementById("tvScrubContainer");
+                    if (isStreamLoaded && !isStreamPlaying && scrubEl && scrubEl.offsetParent !== null) {
+                        scrubEl.focus();
+                    } else if (isTv) {
                         window.focus();
                         if (!isStreamLoaded) {
                             showTvCursor(true);
