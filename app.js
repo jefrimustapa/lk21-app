@@ -390,6 +390,11 @@ function renderHeroCarouselSlide(index) {
 function resetHeroCarouselTimer() {
     if (heroCarouselTimer) clearInterval(heroCarouselTimer);
     heroCarouselTimer = setInterval(() => {
+        const playerModal = document.getElementById("playerModal");
+        if (playerModal && !playerModal.classList.contains("hidden")) return;
+        const detailModal = document.getElementById("detailModal");
+        if (detailModal && !detailModal.classList.contains("hidden")) return;
+
         if (heroCarouselItems && heroCarouselItems.length > 0) {
             heroCarouselIndex = (heroCarouselIndex + 1) % heroCarouselItems.length;
             renderHeroCarouselSlide(heroCarouselIndex);
@@ -1007,7 +1012,7 @@ window.addEventListener("message", (event) => {
         const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
         if (!data) return;
 
-        if (data.event === "error" || data.status === "error" || data.type === "error" || data.error) {
+        if (!isStreamLoaded && !isStreamPlaying && (data.event === "error" || data.status === "error" || (data.type === "error" && !data.streamUrl))) {
             console.warn("[StreamEngine] Received error message from embedded player:", data);
             tryNextServerFallback();
         } else if (data.type === "streamDetected" && data.streamUrl) {
