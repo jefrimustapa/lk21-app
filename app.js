@@ -403,6 +403,7 @@ function resetHeroCarouselTimer() {
 }
 
 let playerHeaderTimer = null;
+let hasPlaybackStarted = false;
 
 function showPlayerHeaderPersistent() {
     const header = document.querySelector(".player-header");
@@ -412,14 +413,18 @@ function showPlayerHeaderPersistent() {
         playerHeaderTimer = null;
     }
     header.classList.remove("fade-out");
-    showTvCursor(true);
+    if (!hasPlaybackStarted) {
+        showTvCursor(true);
+    }
 }
 
 function startPlayerHeaderHideCountdown() {
     const header = document.querySelector(".player-header");
     if (!header) return;
     header.classList.remove("fade-out");
-    showTvCursor(true);
+    if (!hasPlaybackStarted) {
+        showTvCursor(true);
+    }
     if (playerHeaderTimer) clearTimeout(playerHeaderTimer);
     
     playerHeaderTimer = setTimeout(() => {
@@ -636,8 +641,10 @@ function updatePlayerServerUI() {
 }
 
 function playCurrentServerStream() {
+    hasPlaybackStarted = false;
     isStreamLoaded = false;
     isStreamPlaying = false;
+    showTvCursor();
 
     if (!activeServerList || activeServerList.length === 0) {
         showStreamToast("No stream sources available.");
@@ -862,6 +869,51 @@ window.handleNativeDpad = function(nativeKeyCode) {
     const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
     const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
 
+    // === PLAYBACK ACTIVE MODE (POINTER NEVER SHOWN ONCE PLAYBACK > 0) ===
+    if (hasPlaybackStarted) {
+        if (isHeaderBtnFocused) {
+            if (nativeKeyCode === 20) { // DPAD_DOWN: Return from header to video
+                if (activeEl) activeEl.blur();
+                startPlayerHeaderHideCountdown();
+                return;
+            } else if (nativeKeyCode === 21) { // DPAD_LEFT: Focus Back button
+                const closeBtn = document.getElementById("closePlayerBtn");
+                if (closeBtn) closeBtn.focus();
+                return;
+            } else if (nativeKeyCode === 22) { // DPAD_RIGHT: Focus Server button
+                const switchBtn = document.getElementById("switchServerBtn");
+                if (switchBtn && switchBtn.style.display !== "none") switchBtn.focus();
+                return;
+            } else if (nativeKeyCode === 23 || nativeKeyCode === 66) { // OK / Enter
+                if (activeEl && typeof activeEl.click === "function") activeEl.click();
+                return;
+            }
+            return;
+        }
+
+        // When watching video (header not focused):
+        if (nativeKeyCode === 19) { // DPAD_UP: Reveal header and focus Back button
+            showPlayerHeaderPersistent();
+            const closeBtn = document.getElementById("closePlayerBtn");
+            if (closeBtn) closeBtn.focus();
+            return;
+        } else if (nativeKeyCode === 20) { // DPAD_DOWN: Show header briefly
+            showPlayerHeaderTemporarily();
+            return;
+        } else if (nativeKeyCode === 21) { // DPAD_LEFT: Rewind 10s
+            seekPlayerStream(-10);
+            return;
+        } else if (nativeKeyCode === 22) { // DPAD_RIGHT: Fast-forward 10s
+            seekPlayerStream(10);
+            return;
+        } else if (nativeKeyCode === 23 || nativeKeyCode === 66) { // OK / Enter: Toggle Play/Pause
+            togglePlayerPlayback();
+            return;
+        }
+        return;
+    }
+
+    // === PRE-PLAYBACK / BOT VERIFICATION CURSOR MODE (BEFORE PLAYBACK STARTS) ===
     // 1. If Header button is currently focused:
     if (isHeaderBtnFocused) {
         if (nativeKeyCode === 20) { // DPAD_DOWN: Return to video area and restore virtual cursor
@@ -1140,6 +1192,11 @@ function updateTvCursorPosition(newX, newY) {
 function showTvCursor(preservePosition = false) {
     const cursor = document.getElementById("tvVirtualCursor");
     if (!cursor) return;
+    if (hasPlaybackStarted) {
+        cursor.classList.add("hidden");
+        cursor.style.opacity = "0";
+        return;
+    }
     const isTv = document.body.classList.contains("tv-mode") || (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.isTv && window.AndroidBridge.isTv());
     if (isTv) {
         cursor.classList.remove("hidden");
@@ -1160,6 +1217,7 @@ function hideTvCursor() {
     const cursor = document.getElementById("tvVirtualCursor");
     if (cursor) {
         cursor.style.opacity = "0";
+        cursor.classList.add("hidden");
     }
 }
 
@@ -1817,8 +1875,10 @@ function setupEventListeners() {
                     if (activeEl) activeEl.blur();
                     if (isTv) {
                         window.focus();
-                        showTvCursor(true);
-                        updateTvCursorPosition(tvCursorX, Math.max(120, tvCursorY));
+                        if (!hasPlaybackStarted) {
+                            showTvCursor(true);
+                            updateTvCursorPosition(tvCursorX, Math.max(120, tvCursorY));
+                        }
                         showPlayerHeaderTemporarily();
                     } else {
                         const iframe = document.getElementById("videoIframe");
@@ -1836,7 +1896,39 @@ function setupEventListeners() {
                 return;
             }
 
-            // === 2. VIRTUAL POINTER MODE (ACTIVE IN TV MODE ACROSS PLAYBACK) ===
+            // === 2. PLAYBACK ACTIVE MODE (POINTER PERMANENTLY HIDDEN ONCE PLAYBACK > 0) ===
+            if (hasPlaybackStarted) {
+                if (key === "ArrowUp" || keyCode === 38) {
+                    e.preventDefault();
+                    showPlayerHeaderPersistent();
+                    const closeBtn = document.getElementById("closePlayerBtn");
+                    if (closeBtn) closeBtn.focus();
+                    return;
+                }
+                if (key === "ArrowDown" || keyCode === 40) {
+                    e.preventDefault();
+                    showPlayerHeaderTemporarily();
+                    return;
+                }
+                if (key === "ArrowLeft" || keyCode === 37) {
+                    e.preventDefault();
+                    seekPlayerStream(-10);
+                    return;
+                }
+                if (key === "ArrowRight" || keyCode === 39) {
+                    e.preventDefault();
+                    seekPlayerStream(10);
+                    return;
+                }
+                if (key === "Enter" || keyCode === 13 || keyCode === 23 || keyCode === 66 || key === " " || keyCode === 32) {
+                    e.preventDefault();
+                    togglePlayerPlayback();
+                    return;
+                }
+                return;
+            }
+
+            // === 3. PRE-PLAYBACK / BOT VERIFICATION CURSOR MODE ===
             if (isTv) {
                 const cursorEl = document.getElementById("tvVirtualCursor");
                 let isCursorVisible = cursorEl && !cursorEl.classList.contains("hidden") && cursorEl.style.opacity !== "0";
