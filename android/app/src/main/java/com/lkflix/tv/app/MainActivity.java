@@ -206,6 +206,11 @@ public class MainActivity extends BridgeActivity {
                                  + "      v.addEventListener('pause', function() {\n"
                                  + "        window.parent.postMessage(JSON.stringify({ type: 'pause', state: 'paused' }), '*');\n"
                                  + "      });\n"
+                                 + "      v.addEventListener('timeupdate', function() {\n"
+                                 + "        if (v.currentTime > 0) {\n"
+                                 + "          window.parent.postMessage(JSON.stringify({ type: 'timeupdate', position: v.currentTime }), '*');\n"
+                                 + "        }\n"
+                                 + "      });\n"
                                  + "    }\n"
                                  + "    if (window.jwplayer && typeof window.jwplayer === 'function') {\n"
                                  + "      var jw = window.jwplayer();\n"
@@ -217,6 +222,11 @@ public class MainActivity extends BridgeActivity {
                                  + "        jw.on('pause', function() {\n"
                                  + "          window.parent.postMessage(JSON.stringify({ type: 'pause', state: 'paused' }), '*');\n"
                                  + "        });\n"
+                                 + "        jw.on('time', function(e) {\n"
+                                 + "          if (e && e.position > 0) {\n"
+                                 + "            window.parent.postMessage(JSON.stringify({ type: 'timeupdate', position: e.position }), '*');\n"
+                                 + "          }\n"
+                                 + "        });\n"
                                  + "      }\n"
                                  + "    }\n"
                                  + "    if (window.p2p && p2p.player && !p2p.player.__lkBound && typeof p2p.player.on === 'function') {\n"
@@ -226,6 +236,12 @@ public class MainActivity extends BridgeActivity {
                                  + "      });\n"
                                  + "      p2p.player.on('pause', function() {\n"
                                  + "        window.parent.postMessage(JSON.stringify({ type: 'pause', state: 'paused' }), '*');\n"
+                                 + "      });\n"
+                                 + "      p2p.player.on('time', function(e) {\n"
+                                 + "        var pos = (e && typeof e.position === 'number') ? e.position : (typeof p2p.player.getPosition === 'function' ? p2p.player.getPosition() : 0);\n"
+                                 + "        if (pos > 0) {\n"
+                                 + "          window.parent.postMessage(JSON.stringify({ type: 'timeupdate', position: pos }), '*');\n"
+                                 + "        }\n"
                                  + "      });\n"
                                  + "    }\n"
                                  + "  } catch(err){}\n"
@@ -339,8 +355,8 @@ public class MainActivity extends BridgeActivity {
                     });
                 }
                 
-                // When in TV mode, consume D-pad events so they never propagate into embedded iframes
-                if (nativeIsTv) {
+                // When in TV mode, detach ONLY DPAD UP and DOWN from iframe
+                if (nativeIsTv && (keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP || keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN)) {
                     return true;
                 }
             }

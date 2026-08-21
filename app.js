@@ -812,6 +812,13 @@ window.addEventListener("message", (event) => {
             } else {
                 showPlayerHeaderPersistent();
             }
+        } else if (data.type === "timeupdate" || data.type === "time" || data.event === "time") {
+            const pos = Number(data.position || data.currentTime || (data.args && data.args[0]) || 0);
+            if (pos > 0) {
+                isStreamLoaded = true;
+                isStreamPlaying = true;
+                hideTvCursor();
+            }
         } else if (data.type === "pause" || data.event === "pause" || data.state === "paused") {
             handlePlayerPauseState();
         } else if (data.type === "play" || data.event === "play" || data.state === "playing") {
