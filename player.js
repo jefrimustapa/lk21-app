@@ -57,13 +57,8 @@ function initFromUrl() {
 }
 
 function goBack() {
-    console.log("[Player] goBack requested");
-    if (window.history.length > 1) {
-        window.history.back();
-    }
-    setTimeout(() => {
-        window.location.href = "index.html";
-    }, 120);
+    console.log("[Player] Navigating directly to home");
+    window.location.href = "index.html";
 }
 
 window.handleNativeBack = goBack;
