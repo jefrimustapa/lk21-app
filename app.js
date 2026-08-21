@@ -399,19 +399,36 @@ function resetHeroCarouselTimer() {
 
 let playerHeaderTimer = null;
 
-function showPlayerHeaderTemporarily() {
+function showPlayerHeaderPersistent() {
     const header = document.querySelector(".player-header");
     if (!header) return;
-    
+    if (playerHeaderTimer) {
+        clearTimeout(playerHeaderTimer);
+        playerHeaderTimer = null;
+    }
+    header.classList.remove("fade-out");
+}
+
+function startPlayerHeaderHideCountdown() {
+    const header = document.querySelector(".player-header");
+    if (!header) return;
     header.classList.remove("fade-out");
     if (playerHeaderTimer) clearTimeout(playerHeaderTimer);
     
     playerHeaderTimer = setTimeout(() => {
         const modal = document.getElementById("playerModal");
-        if (modal && !modal.classList.contains("hidden")) {
+        if (modal && !modal.classList.contains("hidden") && isStreamPlaying) {
             header.classList.add("fade-out");
         }
     }, 4000);
+}
+
+function showPlayerHeaderTemporarily() {
+    if (!isStreamPlaying && isStreamLoaded) {
+        showPlayerHeaderPersistent();
+    } else {
+        startPlayerHeaderHideCountdown();
+    }
 }
 
 let seekHudTimer = null;
@@ -439,6 +456,26 @@ function showSeekHud(seconds) {
 
 let lastTogglePlaybackTime = 0;
 
+function handlePlayerPauseState() {
+    isStreamPlaying = false;
+    showPlayerHeaderPersistent();
+    showPlayerControls(true);
+
+    // Put focus on the media controller bar
+    const container = document.getElementById("playerContainer");
+    if (container) {
+        container.focus();
+    }
+}
+
+function handlePlayerPlayState() {
+    isStreamLoaded = true;
+    isStreamPlaying = true;
+    hideTvCursor();
+    startPlayerHeaderHideCountdown();
+    showPlayerControls(false);
+}
+
 function togglePlayerPlayback() {
     const now = Date.now();
     if (now - lastTogglePlaybackTime < 400) return;
@@ -449,11 +486,11 @@ function togglePlayerPlayback() {
         if (nativeVideo.paused) {
             nativeVideo.play().catch(e => console.log("Play error:", e));
             showSeekHudText("PLAY", "fa-play");
-            isStreamPlaying = true;
+            handlePlayerPlayState();
         } else {
             nativeVideo.pause();
             showSeekHudText("PAUSE", "fa-pause");
-            isStreamPlaying = false;
+            handlePlayerPauseState();
         }
         return;
     }
@@ -750,17 +787,19 @@ window.addEventListener("message", (event) => {
         } else if (data.type === "userActivity" || data.event === "click" || data.type === "tap") {
             showPlayerHeaderTemporarily();
         } else if (data.type === "pause" || data.event === "pause" || data.state === "paused") {
-            isStreamPlaying = false;
+            handlePlayerPauseState();
         } else if (data.type === "play" || data.event === "play" || data.state === "playing") {
-            isStreamLoaded = true;
-            isStreamPlaying = true;
-            hideTvCursor();
+            handlePlayerPlayState();
         }
     } catch (e) {}
 });
 
-function showPlayerControls() {
-    showPlayerHeaderTemporarily();
+function showPlayerControls(persistent = false) {
+    if (persistent || (!isStreamPlaying && isStreamLoaded)) {
+        showPlayerHeaderPersistent();
+    } else {
+        startPlayerHeaderHideCountdown();
+    }
 
     const nativeVideo = document.getElementById("nativeVideoPlayer");
     if (nativeVideo && !nativeVideo.classList.contains("hidden")) {
@@ -770,35 +809,9 @@ function showPlayerControls() {
     const iframe = document.getElementById("videoIframe");
     if (iframe && iframe.contentWindow) {
         try {
-            iframe.contentWindow.postMessage(JSON.stringify({ type: "showControls" }), "*");
-            iframe.contentWindow.postMessage({ type: "showControls" }, "*");
+            iframe.contentWindow.postMessage(JSON.stringify({ type: "showControls", persistent: persistent }), "*");
+            iframe.contentWindow.postMessage({ type: "showControls", persistent: persistent }, "*");
         } catch (e) {}
-    }
-}
-
-let lastLeftDpadTapTime = 0;
-let lastRightDpadTapTime = 0;
-const DPAD_DOUBLE_TAP_THRESHOLD = 450; // ms window for TV remote double-tap
-
-function handlePlayerRewindDoubleTap() {
-    const now = Date.now();
-    if (now - lastLeftDpadTapTime < DPAD_DOUBLE_TAP_THRESHOLD) {
-        lastLeftDpadTapTime = 0;
-        seekPlayerStream(-10);
-    } else {
-        lastLeftDpadTapTime = now;
-        lastRightDpadTapTime = 0;
-    }
-}
-
-function handlePlayerFastForwardDoubleTap() {
-    const now = Date.now();
-    if (now - lastRightDpadTapTime < DPAD_DOUBLE_TAP_THRESHOLD) {
-        lastRightDpadTapTime = 0;
-        seekPlayerStream(10);
-    } else {
-        lastRightDpadTapTime = now;
-        lastLeftDpadTapTime = 0;
     }
 }
 
@@ -807,6 +820,9 @@ window.handleNativeDpad = function(nativeKeyCode) {
     const playerModal = document.getElementById("playerModal");
     if (!playerModal || playerModal.classList.contains("hidden")) return;
 
+    // Always reveal controls and header on any remote D-Pad key event
+    showPlayerControls(!isStreamPlaying && isStreamLoaded);
+
     // When stream has loaded/playing, process TV remote playback controls
     if (isStreamLoaded) {
         const activeEl = document.activeElement;
@@ -814,13 +830,35 @@ window.handleNativeDpad = function(nativeKeyCode) {
         const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
         const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
 
-        if (nativeKeyCode === 21) { // DPAD_LEFT = 21 (Rewind 10s)
+        // DPAD_UP = 19
+        if (nativeKeyCode === 19) {
             if (!isHeaderBtnFocused) {
-                handlePlayerRewindDoubleTap();
+                // Focus at media controller bar -> Move focus to header
+                const switchBtn = document.getElementById("switchServerBtn");
+                const closeBtn = document.getElementById("closePlayerBtn");
+                if (switchBtn && switchBtn.style.display !== "none" && switchBtn.offsetParent !== null) {
+                    switchBtn.focus();
+                } else if (closeBtn) {
+                    closeBtn.focus();
+                }
+            }
+        } else if (nativeKeyCode === 20) { // DPAD_DOWN = 20
+            if (isHeaderBtnFocused) {
+                // Focus at header -> Move focus back down to media controller bar
+                const container = document.getElementById("playerContainer");
+                if (container) {
+                    container.focus();
+                } else if (activeEl) {
+                    activeEl.blur();
+                }
+            }
+        } else if (nativeKeyCode === 21) { // DPAD_LEFT = 21 (Rewind 10s)
+            if (!isHeaderBtnFocused) {
+                seekPlayerStream(-10);
             }
         } else if (nativeKeyCode === 22) { // DPAD_RIGHT = 22 (Fast Forward 10s)
             if (!isHeaderBtnFocused) {
-                handlePlayerFastForwardDoubleTap();
+                seekPlayerStream(10);
             }
         } else if (nativeKeyCode === 23 || nativeKeyCode === 66 || nativeKeyCode === 85 || nativeKeyCode === 126 || nativeKeyCode === 127) {
             // DPAD_CENTER (23), ENTER (66), MEDIA_PLAY_PAUSE (85), MEDIA_PLAY (126), MEDIA_PAUSE (127)
@@ -903,10 +941,6 @@ function openPlayerModal(movie) {
     isStreamLoaded = false;
     isStreamPlaying = false;
     
-    if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.setPlayerActive === "function") {
-        window.AndroidBridge.setPlayerActive(true);
-    }
-
     // Hide virtual cursor initially until iframe finishes loading
     hideTvCursor();
     
@@ -1059,10 +1093,6 @@ function closePlayerModal(fromHistory = false) {
     const modal = document.getElementById("playerModal");
     if (modal.classList.contains("hidden")) return;
     
-    if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.setPlayerActive === "function") {
-        window.AndroidBridge.setPlayerActive(false);
-    }
-
     hideTvCursor();
     
     if (currentDynamicStreamAbortCtrl) {
@@ -1812,8 +1842,25 @@ function setupEventListeners() {
             }
 
             // === 4. ACTIVE STREAM PLAYBACK CONTROLS (STREAM IS PLAYING / LOADED) ===
-            // Pressing UP brings focus to header button
-            if (key === "ArrowUp" || keyCode === 38) {
+            const activeEl = document.activeElement;
+            const isCloseBtn = activeEl && activeEl.id === "closePlayerBtn";
+            const isSwitchBtn = activeEl && activeEl.id === "switchServerBtn";
+            const isHeaderBtnFocused = isCloseBtn || isSwitchBtn;
+
+            // If focused on header and pressing DOWN -> move focus back to media controller bar
+            if (isHeaderBtnFocused && (key === "ArrowDown" || keyCode === 40)) {
+                e.preventDefault();
+                const container = document.getElementById("playerContainer");
+                if (container) {
+                    container.focus();
+                } else if (activeEl) {
+                    activeEl.blur();
+                }
+                return;
+            }
+
+            // If NOT focused on header and pressing UP -> move focus to header button
+            if (!isHeaderBtnFocused && (key === "ArrowUp" || keyCode === 38)) {
                 e.preventDefault();
                 const switchBtn = document.getElementById("switchServerBtn");
                 const closeBtn = document.getElementById("closePlayerBtn");
@@ -1826,32 +1873,24 @@ function setupEventListeners() {
             }
 
             // Pressing OK / ENTER toggles pause/play
-            if (key === "Enter" || keyCode === 13 || keyCode === 23 || keyCode === 66 || key === " " || keyCode === 32) {
+            if (!isHeaderBtnFocused && (key === "Enter" || keyCode === 13 || keyCode === 23 || keyCode === 66 || key === " " || keyCode === 32)) {
                 e.preventDefault();
                 e.stopPropagation();
                 togglePlayerPlayback();
                 return;
             }
 
-            // Pressing RIGHT double-tap fast-forwards 10s
-            if (key === "ArrowRight" || keyCode === 39) {
+            // Pressing RIGHT fast-forwards 10s
+            if (!isHeaderBtnFocused && (key === "ArrowRight" || keyCode === 39)) {
                 e.preventDefault();
-                showPlayerControls();
-                handlePlayerFastForwardDoubleTap();
+                seekPlayerStream(10);
                 return;
             }
 
-            // Pressing LEFT double-tap rewinds 10s
-            if (key === "ArrowLeft" || keyCode === 37) {
+            // Pressing LEFT rewinds 10s
+            if (!isHeaderBtnFocused && (key === "ArrowLeft" || keyCode === 37)) {
                 e.preventDefault();
-                showPlayerControls();
-                handlePlayerRewindDoubleTap();
-                return;
-            }
-
-            // Pressing DOWN while stream is playing refreshes header without showing pointer
-            if (key === "ArrowDown" || keyCode === 40) {
-                e.preventDefault();
+                seekPlayerStream(-10);
                 return;
             }
         }

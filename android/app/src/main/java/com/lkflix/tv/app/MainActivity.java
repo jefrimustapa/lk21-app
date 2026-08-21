@@ -245,12 +245,14 @@ public class MainActivity extends BridgeActivity {
                                  + "      playerEl.classList.add('jw-flag-user-active');\n"
                                  + "      playerEl.dispatchEvent(evt);\n"
                                  + "      if (window.__jwInactiveTimer) clearTimeout(window.__jwInactiveTimer);\n"
-                                 + "      window.__jwInactiveTimer = setTimeout(function() {\n"
-                                 + "        if (playerEl) {\n"
-                                 + "          playerEl.classList.remove('jw-flag-user-active');\n"
-                                 + "          playerEl.classList.add('jw-flag-user-inactive');\n"
-                                 + "        }\n"
-                                 + "      }, 4000);\n"
+                                 + "      if (!persistent) {\n"
+                                 + "        window.__jwInactiveTimer = setTimeout(function() {\n"
+                                 + "          if (playerEl) {\n"
+                                 + "            playerEl.classList.remove('jw-flag-user-active');\n"
+                                 + "            playerEl.classList.add('jw-flag-user-inactive');\n"
+                                 + "          }\n"
+                                 + "        }, 4000);\n"
+                                 + "      }\n"
                                  + "    }\n"
                                  + "  } catch(e) {}\n"
                                  + "}\n"
@@ -262,8 +264,12 @@ public class MainActivity extends BridgeActivity {
                                  + "    try { data = JSON.parse(data); } catch(err){}\n"
                                  + "  }\n"
                                  + "  if (!data) return;\n"
-                                 + "  showIframeControls();\n"
-                                 + "  if (data.type === 'seek' || data.func === 'fastForward' || data.func === 'rewind') {\n"
+                                 + "  if (data.type === 'showControls') {\n"
+                                 + "    showIframeControls(data.persistent || false);\n"
+                                 + "  } else if (data.type === 'startHideCountdown') {\n"
+                                 + "    showIframeControls(false);\n"
+                                 + "  } else if (data.type === 'seek' || data.func === 'fastForward' || data.func === 'rewind') {\n"
+                                 + "    showIframeControls(false);\n"
                                  + "    var offset = data.offset || (data.args && data.args[0]) || 10;\n"
                                  + "    if (data.func === 'rewind' && offset > 0) offset = -offset;\n"
                                  + "    handleRemoteSeek(offset);\n"
@@ -276,13 +282,6 @@ public class MainActivity extends BridgeActivity {
                                  + "}, { passive: true });\n"
                                  + "document.addEventListener('click', function() {\n"
                                  + "  try { window.parent.postMessage(JSON.stringify({ type: 'userActivity' }), '*'); } catch(err){}\n"
-                                 + "}, true);\n"
-                                 + "document.addEventListener('keydown', function(e) {\n"
-                                 + "  if (e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 21 || e.keyCode === 22 || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Left' || e.key === 'Right') {\n"
-                                 + "    e.preventDefault();\n"
-                                 + "    e.stopPropagation();\n"
-                                 + "    e.stopImmediatePropagation();\n"
-                                 + "  }\n"
                                  + "}, true);\n"
                                  + "</script>\n";
 
@@ -312,8 +311,6 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
-    private volatile boolean isPlayerActive = false;
-
     @Override
     public boolean dispatchKeyEvent(android.view.KeyEvent event) {
         if (event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
@@ -336,9 +333,6 @@ public class MainActivity extends BridgeActivity {
                             webView.evaluateJavascript("if (typeof window.handleNativeDpad === 'function') { window.handleNativeDpad(" + keyCode + "); }", null);
                         }
                     });
-                }
-                if (isPlayerActive) {
-                    return true;
                 }
             }
         }
@@ -376,11 +370,6 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public boolean isTv() {
             return nativeIsTv;
-        }
-
-        @JavascriptInterface
-        public void setPlayerActive(boolean active) {
-            isPlayerActive = active;
         }
 
         @JavascriptInterface
