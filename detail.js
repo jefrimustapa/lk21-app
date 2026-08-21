@@ -149,37 +149,47 @@ function renderRelatedMovies(movies) {
     });
 }
 
+function goBack() {
+    console.log("[Detail] goBack requested");
+    if (window.history.length > 1) {
+        window.history.back();
+    }
+    setTimeout(() => {
+        window.location.href = "index.html";
+    }, 120);
+}
+
+window.handleNativeBack = goBack;
+
 function setupDetailListeners() {
     const backBtn = document.getElementById("closeDetailBtn");
     const playBtn = document.getElementById("detailPlayBtn");
     const posterEl = document.getElementById("detailPoster");
 
-    const goBack = () => {
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            window.location.href = "index.html";
-        }
-    };
-
     if (backBtn) {
-        backBtn.addEventListener("click", goBack);
+        backBtn.onclick = (e) => {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            goBack();
+        };
     }
 
     if (playBtn) {
-        playBtn.addEventListener("click", () => {
+        playBtn.onclick = () => {
             if (currentMovie && currentMovie.url) {
                 window.location.href = `player.html?url=${encodeURIComponent(currentMovie.url)}&title=${encodeURIComponent(currentMovie.title)}&quality=${encodeURIComponent(currentMovie.quality || "HD")}`;
             }
-        });
+        };
     }
 
     if (posterEl) {
-        posterEl.addEventListener("click", () => {
+        posterEl.onclick = () => {
             if (currentMovie && currentMovie.url) {
                 window.location.href = `player.html?url=${encodeURIComponent(currentMovie.url)}&title=${encodeURIComponent(currentMovie.title)}&quality=${encodeURIComponent(currentMovie.quality || "HD")}`;
             }
-        });
+        };
     }
 
     // Auto focus Watch Now button on initial load on TV
@@ -204,6 +214,10 @@ function setupDetailListeners() {
         }
 
         if (keyCode === 23 || keyCode === 66 || keyCode === 13) { // OK / Enter
+            if (active === backBtn) {
+                goBack();
+                return;
+            }
             if (active && typeof active.click === "function") {
                 active.click();
             } else if (playBtn) {

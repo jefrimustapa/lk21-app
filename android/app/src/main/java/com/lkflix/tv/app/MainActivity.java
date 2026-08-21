@@ -367,18 +367,15 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onBackPressed() {
-        WebView webView = getBridge().getWebView();
+        final WebView webView = getBridge().getWebView();
         if (webView != null) {
-            String currentUrl = webView.getUrl();
-            if (currentUrl != null && (currentUrl.contains("player.html") || currentUrl.contains("detail.html"))) {
-                if (webView.canGoBack()) {
-                    webView.goBack();
-                    return;
-                } else {
-                    webView.loadUrl("https://localhost/index.html");
-                    return;
+            webView.post(new Runnable() {
+                @Override
+                public void run() {
+                    webView.evaluateJavascript("if (typeof window.handleNativeBack === 'function') { window.handleNativeBack(); } else if (window.history.length > 1) { window.history.back(); } else { window.location.href = 'index.html'; }", null);
                 }
-            }
+            });
+            return;
         }
         super.onBackPressed();
     }
