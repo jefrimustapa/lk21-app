@@ -117,6 +117,19 @@ function enableMobileMode() {
    2. App Initialization & Initial Data Fetch
    ========================================================================== */
 async function initApp() {
+    const params = new URLSearchParams(window.location.search);
+    const genreParam = params.get("genre");
+    if (genreParam) {
+        activeGenre = genreParam.trim();
+        const genreItems = document.querySelectorAll(".genre-item, .genre-pill");
+        genreItems.forEach(i => {
+            if (i.getAttribute("data-genre") && i.getAttribute("data-genre").toLowerCase() === activeGenre.toLowerCase()) {
+                i.classList.add("active");
+            } else {
+                i.classList.remove("active");
+            }
+        });
+    }
     await loadMovies(1, true);
 }
 
