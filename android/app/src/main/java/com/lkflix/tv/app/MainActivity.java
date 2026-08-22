@@ -470,6 +470,36 @@ public class MainActivity extends BridgeActivity {
         }
 
         @JavascriptInterface
+        public void clickButtonByText(final String buttonText) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        // Get actual screen dimensions at runtime
+                        android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+                        getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+                        int screenW = metrics.widthPixels;
+                        int screenH = metrics.heightPixels;
+
+                        // LANJUTKAN button normalized position — measured on 1920x1080:
+                        // bounds=[952,578][1182,658] → center (1067, 618)
+                        // normX = 1067/1920 = 0.5557,  normY = 618/1080 = 0.5722
+                        // The dialog is always screen-centered so these ratios hold on any resolution.
+                        int tapX = (int)(0.5557f * screenW);
+                        int tapY = (int)(0.5722f * screenH);
+
+                        Log.d(TAG, "clickButtonByText: '" + buttonText + "' -> tap(" + tapX + "," + tapY + ") on " + screenW + "x" + screenH);
+                        Runtime.getRuntime().exec(
+                            new String[]{"input", "tap", String.valueOf(tapX), String.valueOf(tapY)}
+                        );
+                    } catch (Exception e) {
+                        Log.e(TAG, "clickButtonByText error: " + e.getMessage());
+                    }
+                }
+            }).start();
+        }
+
+        @JavascriptInterface
         public String resolveDetailStreamSources(String detailPageUrl) {
             try {
                 Log.d(TAG, "NativeBridge resolveDetailStreamSources from: " + detailPageUrl);
