@@ -301,6 +301,14 @@ function switchStreamServer() {
     playCurrentServer();
 }
 
+let cursorAutoHideTimer = null;
+function resetCursorAutoHide(duration = 3500) {
+    if (cursorAutoHideTimer) clearTimeout(cursorAutoHideTimer);
+    cursorAutoHideTimer = setTimeout(() => {
+        hideTvCursor();
+    }, duration);
+}
+
 // Header & Virtual Pointer Controls
 function showPlayerHeaderPersistent() {
     const header = document.getElementById("playerHeader");
@@ -310,25 +318,16 @@ function showPlayerHeaderPersistent() {
         playerHeaderTimer = null;
     }
     header.classList.remove("fade-out");
-    if (!hasPlaybackStarted) {
-        showTvCursor(true);
-    }
 }
 
 function startPlayerHeaderHideCountdown() {
     const header = document.getElementById("playerHeader");
     if (!header) return;
     header.classList.remove("fade-out");
-    if (!hasPlaybackStarted) {
-        showTvCursor(true);
-    }
     if (playerHeaderTimer) clearTimeout(playerHeaderTimer);
     playerHeaderTimer = setTimeout(() => {
         header.classList.add("fade-out");
-        // Only hide cursor after playback has started
-        if (hasPlaybackStarted) {
-            hideTvCursor();
-        }
+        hideTvCursor();
     }, 4000);
 }
 
@@ -354,6 +353,7 @@ function showTvCursor(preservePosition = false) {
         } else {
             updateTvCursorPosition(tvCursorX, tvCursorY);
         }
+        resetCursorAutoHide(4000);
     } else {
         cursor.classList.add("hidden");
         cursor.style.display = "none";
@@ -365,9 +365,11 @@ function hideTvCursor() {
     if (cursor) {
         cursor.style.opacity = "0";
         cursor.classList.add("hidden");
-        if (hasPlaybackStarted) {
-            cursor.style.display = "none";
-        }
+        cursor.style.display = "none";
+    }
+    if (cursorAutoHideTimer) {
+        clearTimeout(cursorAutoHideTimer);
+        cursorAutoHideTimer = null;
     }
 }
 
@@ -585,17 +587,21 @@ window.handleNativeDpad = function(keyCode) {
             return;
         }
         updateTvCursorPosition(tvCursorX, newY);
+        resetCursorAutoHide(3500);
         return;
     } else if (keyCode === 20) { // DPAD_DOWN
         updateTvCursorPosition(tvCursorX, tvCursorY + step);
+        resetCursorAutoHide(3500);
         return;
     } else if (keyCode === 21) { // DPAD_LEFT
         updateTvCursorPosition(tvCursorX - step, tvCursorY);
+        resetCursorAutoHide(3500);
         return;
     } else if (keyCode === 22) { // DPAD_RIGHT
         updateTvCursorPosition(tvCursorX + step, tvCursorY);
+        resetCursorAutoHide(3500);
         return;
-    } else if (keyCode === 23 || keyCode === 66) { // OK / Click
+    } else if (keyCode === 23 || keyCode === 66 || keyCode === 13) { // OK / Click
         const cursorEl = document.getElementById("tvVirtualCursor");
         if (cursorEl) {
             cursorEl.classList.add("clicking");
@@ -612,6 +618,11 @@ window.handleNativeDpad = function(keyCode) {
                 iframe.contentWindow.postMessage(JSON.stringify({ type: "play", func: "play" }), "*");
             } catch(e) {}
         }
+        // Permanently dismiss the cursor shortly after clicking Play
+        setTimeout(() => {
+            hasPlaybackStarted = true;
+            hideTvCursor();
+        }, 1200);
         return;
     }
 };
