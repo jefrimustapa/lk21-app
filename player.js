@@ -219,6 +219,7 @@ function playCurrentServer() {
         showToast(`Connecting to Server ${serverNum}/${totalServers}...`, 2000);
     }
 
+
     if (typeof window.AndroidBridge !== "undefined" && typeof window.AndroidBridge.resolveDirectStream === "function") {
         try {
             const resolved = window.AndroidBridge.resolveDirectStream(playUrl);
@@ -281,10 +282,12 @@ function playCurrentServer() {
             }
             iframe.src = embedUrl;
 
+
             iframe.onload = () => {
                 try {
                     iframe.contentWindow.postMessage(JSON.stringify({ type: "play", func: "play" }), "*");
                 } catch(e) {}
+
                 if (!hasPlaybackStarted) {
                     showTvCursor();
                 }
@@ -618,10 +621,18 @@ window.handleNativeDpad = function(keyCode) {
                 iframe.contentWindow.postMessage(JSON.stringify({ type: "play", func: "play" }), "*");
             } catch(e) {}
         }
-        // Permanently dismiss the cursor shortly after clicking Play
+        // Permanently dismiss the cursor shortly after clicking (bot validation passed)
         setTimeout(() => {
             hasPlaybackStarted = true;
             hideTvCursor();
+
+            // For P2P: "Lanjutkan Menonton" appears after bot validation.
+            // Dynamically find and tap the LANJUTKAN button by text — no hardcoded coords.
+            if (typeof window.AndroidBridge !== "undefined" &&
+                typeof window.AndroidBridge.clickButtonByText === "function") {
+                setTimeout(() => window.AndroidBridge.clickButtonByText("LANJUTKAN"), 800);
+                setTimeout(() => window.AndroidBridge.clickButtonByText("LANJUTKAN"), 3800);
+            }
         }, 1200);
         return;
     }

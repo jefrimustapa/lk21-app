@@ -243,6 +243,11 @@ function appendMoviesToGrid(movies) {
     const grid = document.getElementById("mainMovieGrid");
 
     movies.forEach(movie => {
+        // Prevent adding exact duplicate cards to the DOM if we re-fetch overlapping data
+        if (grid.querySelector(`.movie-card[data-movie-id="${movie.id}"]`)) {
+            return;
+        }
+
         const card = document.createElement("div");
         card.className = "movie-card";
         card.setAttribute("tabindex", "0");
@@ -326,17 +331,31 @@ function setupInfiniteScroll() {
     }, {
         root: null,
         rootMargin: "300px",
-        threshold: 0.01
+        threshold: 0
     });
 
     observer.observe(sentinel);
 
     // Fallback for mobile browsers where IntersectionObserver might lag
     window.addEventListener("scroll", () => {
-        if ((window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 400)) {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        const scrollHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+        if ((window.innerHeight + scrollTop) >= (scrollHeight - 600)) {
             checkAndLoadMore();
         }
-    });
+    }, { passive: true });
+
+    // Bulletproof fallback: poll the sentinel's position every 250ms
+    // This guarantees pagination works even if scroll events are swallowed by a wrapper div
+    setInterval(() => {
+        if (!isLoading && hasMore && sentinel) {
+            const rect = sentinel.getBoundingClientRect();
+            // If rect.bottom is 0 and rect.top is 0, the element is probably display:none
+            if ((rect.top !== 0 || rect.bottom !== 0) && rect.top <= (window.innerHeight || document.documentElement.clientHeight) + 800) {
+                checkAndLoadMore();
+            }
+        }
+    }, 250);
 }
 
 /* ==========================================================================
@@ -2053,8 +2072,11 @@ function setupEventListeners() {
         });
     }
 
-    document.getElementById("closePlayerBtn").onclick = () => closePlayerModal(false);
-    document.getElementById("closeDetailBtn").onclick = () => closeDetailModal(false);
+    const closePlayerBtn = document.getElementById("closePlayerBtn");
+    if (closePlayerBtn) closePlayerBtn.onclick = () => closePlayerModal(false);
+    
+    const closeDetailBtn = document.getElementById("closeDetailBtn");
+    if (closeDetailBtn) closeDetailBtn.onclick = () => closeDetailModal(false);
 
     // Navbar Glass Effect
     window.addEventListener("scroll", () => {

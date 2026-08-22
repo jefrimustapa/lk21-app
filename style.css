@@ -1448,6 +1448,7 @@ body.tv-mode .btn-back-player:focus,
     flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 16px;
+    justify-content: center;
 }
 
 .detail-genre-pill {
